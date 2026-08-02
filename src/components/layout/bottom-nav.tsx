@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Sparkles, Dice5, Gift, Receipt } from "lucide-react";
+import { Home, Tv, Dice5, Gift, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/slots", label: "Slots", icon: Sparkles },
-  { href: "/games", label: "Games", icon: Dice5 },
+  { href: "/live-casino", label: "Live Casino", icon: Tv },
+  { href: "/slots", label: "Casino", icon: Dice5 },
   { href: "/promotions", label: "Promotions", icon: Gift },
   { href: "/my-bets", label: "My Bets", icon: Receipt },
 ];

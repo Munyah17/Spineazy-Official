@@ -14,6 +14,61 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_commissions: {
+        Row: {
+          affiliate_id: string
+          amount: number
+          created_at: string
+          deposit_id: string | null
+          id: string
+          rate: number
+          referred_user_id: string
+          status: string
+        }
+        Insert: {
+          affiliate_id: string
+          amount: number
+          created_at?: string
+          deposit_id?: string | null
+          id?: string
+          rate: number
+          referred_user_id: string
+          status?: string
+        }
+        Update: {
+          affiliate_id?: string
+          amount?: number
+          created_at?: string
+          deposit_id?: string | null
+          id?: string
+          rate?: number
+          referred_user_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_commissions_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_commissions_deposit_id_fkey"
+            columns: ["deposit_id"]
+            isOneToOne: false
+            referencedRelation: "deposits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_commissions_referred_user_id_fkey"
+            columns: ["referred_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -1199,6 +1254,48 @@ export type Database = {
         Returns: string
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      fn_get_affiliate_stats: { Args: never; Returns: Json }
+      fn_get_recent_referrals: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+          full_name: string
+          created_at: string
+          status: Database["public"]["Enums"]["account_status"]
+          commission: number
+        }[]
+      }
+      fn_get_admin_stats: { Args: never; Returns: Json }
+      fn_get_admin_activity: {
+        Args: { p_limit?: number }
+        Returns: { kind: string; label: string; amount: number | null; created_at: string }[]
+      }
+      fn_get_pending_withdrawals: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+          user_id: string
+          full_name: string
+          amount: number
+          method: Database["public"]["Enums"]["payment_method"]
+          destination: Json
+          requested_at: string
+        }[]
+      }
+      fn_get_super_admin_stats: { Args: never; Returns: Json }
+      fn_get_deposits_vs_withdrawals: {
+        Args: { p_days?: number }
+        Returns: { day: string; deposits: number; withdrawals: number }[]
+      }
+      fn_get_top_games: {
+        Args: { p_limit?: number }
+        Returns: { game_key: string; title: string; turnover: number }[]
+      }
+      fn_record_referral_commission: {
+        Args: { p_referred_user_id: string; p_deposit_id: string; p_amount: number }
+        Returns: undefined
+      }
+      fn_resolve_referral_code: { Args: { p_code: string }; Returns: string }
       fn_approve_withdrawal: {
         Args: { p_withdrawal_id: string }
         Returns: undefined

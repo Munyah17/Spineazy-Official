@@ -15,7 +15,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: deposit } = await supabase
     .from("deposits")
-    .select("id, status, client_correlator, user_id")
+    .select("id, status, amount, client_correlator, user_id")
     .eq("id", id)
     .single();
 
@@ -30,6 +30,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   if (isPaynowPaid(poll.status ?? "")) {
     await admin.rpc("fn_complete_deposit", { p_deposit_id: deposit.id });
+    await admin.rpc("fn_record_referral_commission", {
+      p_referred_user_id: deposit.user_id,
+      p_deposit_id: deposit.id,
+      p_amount: Number(deposit.amount),
+    });
     return NextResponse.json({ status: "completed" });
   }
   if ((poll.status ?? "").toLowerCase() === "cancelled") {

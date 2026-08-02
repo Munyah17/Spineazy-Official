@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   const admin = createAdminClient();
   const { data: deposit } = await admin
     .from("deposits")
-    .select("id, status, amount, profiles(email)")
+    .select("id, status, amount, user_id, profiles(email)")
     .eq("client_correlator", payload.clientCorrelator)
     .maybeSingle();
 
@@ -35,6 +35,11 @@ export async function POST(req: NextRequest) {
 
   if (isSuccessStatusMessage(payload.statusMessage ?? "")) {
     await admin.rpc("fn_complete_deposit", { p_deposit_id: deposit.id });
+    await admin.rpc("fn_record_referral_commission", {
+      p_referred_user_id: deposit.user_id,
+      p_deposit_id: deposit.id,
+      p_amount: Number(deposit.amount),
+    });
     const email = deposit.profiles?.email;
     if (email) {
       await sendEmail(email, "Deposit received", depositCompletedEmail(formatMoney(Number(deposit.amount)), "EcoCash"));

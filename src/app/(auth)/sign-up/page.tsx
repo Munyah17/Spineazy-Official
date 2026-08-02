@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { createClient } from "@/lib/supabase/client";
 
 export default function SignUpPage() {
+  return (
+    <Suspense>
+      <SignUpForm />
+    </Suspense>
+  );
+}
+
+function SignUpForm() {
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const refCode = searchParams.get("ref");
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -44,11 +54,17 @@ export default function SignUpPage() {
     setLoading(true);
     const fullPhone = phone ? `+263${phone.replace(/^0+/, "")}` : null;
 
+    let referredBy: string | null = null;
+    if (refCode) {
+      const { data } = await supabase.rpc("fn_resolve_referral_code", { p_code: refCode });
+      referredBy = data ?? null;
+    }
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName, phone: fullPhone },
+        data: { full_name: fullName, phone: fullPhone, referred_by: referredBy },
       },
     });
     setLoading(false);

@@ -30,6 +30,11 @@ export async function POST(req: NextRequest) {
 
   if (isPaynowPaid(fields.status ?? "")) {
     await admin.rpc("fn_complete_deposit", { p_deposit_id: deposit.id });
+    await admin.rpc("fn_record_referral_commission", {
+      p_referred_user_id: deposit.user_id,
+      p_deposit_id: deposit.id,
+      p_amount: Number(deposit.amount),
+    });
     const email = deposit.profiles?.email;
     if (email) {
       await sendEmail(

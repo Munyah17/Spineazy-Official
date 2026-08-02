@@ -83,7 +83,7 @@
   --chart-3: #2f7fd6;
   --chart-4: #dc2626;
   --chart-5: #6b5d78;
-  --radius: 0.25rem;
+  --radius: 0.85rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #170f20;
   --sidebar-primary: #9333ea;
@@ -124,7 +124,7 @@
   --chart-3: #4ea8ff;
   --chart-4: #ff4d5e;
   --chart-5: #9c8bad;
-  --radius: 0.25rem;
+  --radius: 0.85rem;
   --sidebar: #120b1a;
   --sidebar-foreground: #f2edf7;
   --sidebar-primary: #a855f7;
@@ -154,5 +154,23 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+  .glow-primary {
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--primary), transparent 60%),
+      0 8px 24px -8px color-mix(in oklch, var(--primary), transparent 35%);
+  }
+  .glow-win {
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--win), transparent 55%),
+      0 8px 20px -6px color-mix(in oklch, var(--win), transparent 40%);
+  }
+  .surface-glass {
+    background: color-mix(in oklch, var(--surface), transparent 12%);
+    backdrop-filter: blur(16px);
+  }
+  .app-bg {
+    background:
+      radial-gradient(70rem 40rem at 15% -10%, color-mix(in oklch, var(--primary), transparent 88%), transparent),
+      radial-gradient(50rem 30rem at 110% 10%, color-mix(in oklch, var(--win), transparent 93%), transparent),
+      var(--background);
   }
 }

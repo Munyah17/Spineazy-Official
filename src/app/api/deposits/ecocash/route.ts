@@ -80,6 +80,11 @@ export async function POST(req: NextRequest) {
 
     if (isSuccessStatusMessage(charge.statusMessage)) {
       await admin.rpc("fn_complete_deposit", { p_deposit_id: deposit.id });
+      await admin.rpc("fn_record_referral_commission", {
+        p_referred_user_id: user.id,
+        p_deposit_id: deposit.id,
+        p_amount: amount,
+      });
       if (user.email) {
         await sendEmail(user.email, "Deposit received", depositCompletedEmail(formatMoney(amount), "EcoCash"));
       }

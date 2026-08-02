@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Footer } from "@/components/layout/footer";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -24,6 +25,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <main className="flex flex-1 flex-col justify-center px-5 py-8">
         <div className="mx-auto w-full max-w-sm">{children}</div>
       </main>
+      <Footer />
     </div>
   );
 }

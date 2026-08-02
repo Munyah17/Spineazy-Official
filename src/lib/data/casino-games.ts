@@ -16,7 +16,10 @@ export const getCasinoGames = unstable_cache(
       .eq("active", true)
       .order("display_order");
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("getCasinoGames failed:", error.message);
+      return [];
+    }
     return data ?? [];
   },
   ["casino-games"],

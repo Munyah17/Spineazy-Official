@@ -10,10 +10,16 @@ import {
   Gift,
   Trophy,
   ShieldCheck,
+  Crown,
   LogOut,
   LogIn,
   UserPlus,
   Home,
+  Tv,
+  Dice5,
+  Users,
+  ArrowDownToLine,
+  ArrowUpFromLine,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -27,19 +33,26 @@ export function NavSheet() {
   const [open, setOpen] = useState(false);
   const { profile, signOut } = useSession();
   const isAdmin = profile?.role === "admin" || profile?.role === "super_admin";
+  const isSuperAdmin = profile?.role === "super_admin";
 
   const links = [
     { href: "/", label: "Home", icon: Home },
+    { href: "/live-casino", label: "Live Casino", icon: Tv },
+    { href: "/slots", label: "Casino", icon: Dice5 },
     { href: SPORTSBOOK_URL, label: "EazyBet Sportsbook", icon: Trophy, external: true },
     { href: "/promotions", label: "Promotions", icon: Gift },
     ...(profile
       ? [
           { href: "/account", label: "My Account", icon: User },
           { href: "/wallet", label: "Wallet", icon: Wallet },
+          { href: "/wallet/deposit", label: "Deposit", icon: ArrowDownToLine },
+          { href: "/wallet/withdraw", label: "Withdraw", icon: ArrowUpFromLine },
           { href: "/my-bets", label: "My Bets", icon: Receipt },
+          { href: "/affiliates", label: "Affiliates", icon: Users },
         ]
       : []),
     ...(isAdmin ? [{ href: "/admin", label: "Admin Dashboard", icon: ShieldCheck }] : []),
+    ...(isSuperAdmin ? [{ href: "/admin/super", label: "Super Admin", icon: Crown }] : []),
   ];
 
   return (
