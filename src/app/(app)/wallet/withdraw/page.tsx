@@ -3,12 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { createClient } from "@/lib/supabase/client";
 import { formatMoney } from "@/lib/format";
 
@@ -24,11 +32,13 @@ const MIN_WITHDRAWAL = 5;
 export default function WithdrawPage() {
   const supabase = createClient();
   const router = useRouter();
-  const [balance, setBalance] = useState<number | null>(null);
+  const [profitBalance, setProfitBalance] = useState<number | null>(null);
+  const [depositedBalance, setDepositedBalance] = useState<number | null>(null);
   const [method, setMethod] = useState<(typeof METHODS)[number]["value"]>("ecocash");
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
+  const [blockedOpen, setBlockedOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -36,8 +46,13 @@ export default function WithdrawPage() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from("wallets").select("balance").eq("user_id", user.id).single();
-      setBalance(data?.balance ?? 0);
+      const { data } = await supabase
+        .from("wallets")
+        .select("profit_balance, deposited_balance")
+        .eq("user_id", user.id)
+        .single();
+      setProfitBalance(data?.profit_balance ?? 0);
+      setDepositedBalance(data?.deposited_balance ?? 0);
     })();
   }, [supabase]);
 
@@ -51,17 +66,30 @@ export default function WithdrawPage() {
       toast.error(`Minimum withdrawal is ${formatMoney(MIN_WITHDRAWAL)}`);
       return;
     }
-    if (balance !== null && numAmount > balance) {
-      toast.error("Amount exceeds your available balance");
-      return;
-    }
     if (!phone) {
       toast.error("Enter the destination phone number");
       return;
     }
 
     setLoading(true);
-    const { data, error } = await supabase.rpc("fn_request_withdrawal", {
+
+    const { data: allowed, error: guardError } = await supabase.rpc("fn_guard_withdrawal_request", {
+      p_amount: numAmount,
+    });
+
+    if (guardError) {
+      setLoading(false);
+      toast.error("Couldn't verify your balance", { description: guardError.message });
+      return;
+    }
+
+    if (!allowed) {
+      setLoading(false);
+      setBlockedOpen(true);
+      return;
+    }
+
+    const { error } = await supabase.rpc("fn_request_withdrawal", {
       p_amount: numAmount,
       p_method: method,
       p_destination: { phone: `+263${phone.replace(/^0+/, "")}` },
@@ -74,7 +102,6 @@ export default function WithdrawPage() {
     }
 
     toast.success("Withdrawal requested", { description: "We'll process this within 1-2 hours." });
-    void data;
     router.push("/wallet");
     router.refresh();
   }
@@ -89,10 +116,15 @@ export default function WithdrawPage() {
       </div>
 
       <div className="rounded-2xl bg-card p-4 ring-1 ring-foreground/10">
-        <p className="text-sm text-muted-foreground">Available Balance</p>
+        <p className="text-sm text-muted-foreground">Available to Withdraw</p>
         <p className="mt-1 text-2xl font-extrabold text-foreground">
-          {balance === null ? "…" : formatMoney(balance)}
+          {profitBalance === null ? "…" : formatMoney(profitBalance)}
         </p>
+        {depositedBalance !== null && depositedBalance > 0 && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            + {formatMoney(depositedBalance)} deposited balance — bet-only, not withdrawable
+          </p>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -159,6 +191,30 @@ export default function WithdrawPage() {
         </Button>
         <p className="text-center text-xs text-muted-foreground">Withdrawals are processed within 1-2 hours.</p>
       </form>
+
+      <Dialog open={blockedOpen} onOpenChange={setBlockedOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <span className="flex size-11 items-center justify-center rounded-full bg-destructive/15 text-destructive">
+              <ShieldAlert className="size-5" />
+            </span>
+            <DialogTitle className="mt-2">Deposited funds can&apos;t be withdrawn</DialogTitle>
+            <DialogDescription>
+              That amount includes money from a deposit, which can only be used to place bets — it can&apos;t be
+              withdrawn or shared as a Red Packet. Want to send a loved one bet-only funds instead? You can buy them
+              a voucher.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBlockedOpen(false)} className="w-full sm:w-auto">
+              Got it
+            </Button>
+            <Button asChild className="w-full sm:w-auto">
+              <Link href="/chat">Send a Voucher</Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

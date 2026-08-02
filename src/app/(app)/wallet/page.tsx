@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowDownToLine, ArrowUpFromLine, Wallet as WalletIcon, Gift, TrendingDown } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Wallet as WalletIcon, Gift, TrendingDown, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,7 +20,13 @@ const TX_LABEL: Record<string, string> = {
   cashout: "Cash Out",
   adjustment: "Adjustment",
   booking_release: "Booking Release",
+  gift_sent: "Red Packet Sent",
+  gift_received: "Red Packet Received",
+  voucher_issued: "Voucher Sent",
+  voucher_redeemed: "Voucher Redeemed",
 };
+
+const CREDIT_TYPES = ["deposit", "bet_payout", "bet_refund", "bonus_credit", "cashout", "gift_received", "voucher_redeemed"];
 
 export default async function WalletPage() {
   const supabase = await createClient();
@@ -51,6 +57,10 @@ export default async function WalletPage() {
           <div>
             <p className="text-sm text-muted-foreground">Wallet Balance</p>
             <p className="mt-1 text-3xl font-extrabold text-foreground">{formatMoney(wallet?.balance ?? 0)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {formatMoney(wallet?.profit_balance ?? 0)} withdrawable · {formatMoney(wallet?.deposited_balance ?? 0)}{" "}
+              bet-only
+            </p>
           </div>
           <div className="flex gap-2">
             <Button asChild>
@@ -67,10 +77,18 @@ export default async function WalletPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard icon={ArrowUpFromLine} label="Withdrawable" value={formatMoney(wallet?.profit_balance ?? 0)} tone="win" />
+        <StatCard icon={ArrowDownToLine} label="Bet-only" value={formatMoney(wallet?.deposited_balance ?? 0)} />
+        <StatCard icon={Gift} label="Bonus Balance" value={formatMoney(wallet?.bonus_balance ?? 0)} tone="boost" />
+        <Link href="/chat" className="block">
+          <StatCard icon={MessageCircle} label="Chat & Pay" value="Send a gift" />
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <StatCard icon={ArrowDownToLine} label="Total Deposits" value={formatMoney(totalDeposits)} tone="win" />
         <StatCard icon={TrendingDown} label="Total Withdrawals" value={formatMoney(totalWithdrawals)} tone="destructive" />
-        <StatCard icon={Gift} label="Bonus Balance" value={formatMoney(wallet?.bonus_balance ?? 0)} tone="boost" />
       </div>
 
       <section>
@@ -79,7 +97,7 @@ export default async function WalletPage() {
           <Card>
             <CardContent className="divide-y divide-border p-0">
               {transactions.map((tx) => {
-                const isCredit = ["deposit", "bet_payout", "bet_refund", "bonus_credit", "cashout"].includes(tx.type);
+                const isCredit = CREDIT_TYPES.includes(tx.type);
                 return (
                   <div key={tx.id} className="flex items-center gap-3 px-4 py-3">
                     <span

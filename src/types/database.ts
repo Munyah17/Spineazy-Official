@@ -1121,14 +1121,227 @@ export type Database = {
           },
         ]
       }
+      chat_threads: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          user_a_id: string
+          user_b_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          user_a_id: string
+          user_b_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          user_a_id?: string
+          user_b_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_threads_user_a_id_fkey"
+            columns: ["user_a_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_threads_user_b_id_fkey"
+            columns: ["user_b_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          kind: string
+          red_packet_id: string | null
+          sender_id: string
+          thread_id: string
+          voucher_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          red_packet_id?: string | null
+          sender_id: string
+          thread_id: string
+          voucher_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          red_packet_id?: string | null
+          sender_id?: string
+          thread_id?: string
+          voucher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "chat_threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_red_packet_fkey"
+            columns: ["red_packet_id"]
+            isOneToOne: false
+            referencedRelation: "red_packets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_voucher_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      red_packets: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          recipient_id: string
+          sender_id: string
+          thread_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          recipient_id: string
+          sender_id: string
+          thread_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          recipient_id?: string
+          sender_id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "red_packets_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "chat_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vouchers: {
+        Row: {
+          amount: number
+          code: string
+          created_at: string
+          id: string
+          issuer_id: string
+          recipient_id: string
+          redeemed_at: string | null
+          status: string
+          thread_id: string | null
+        }
+        Insert: {
+          amount: number
+          code: string
+          created_at?: string
+          id?: string
+          issuer_id: string
+          recipient_id: string
+          redeemed_at?: string | null
+          status?: string
+          thread_id?: string | null
+        }
+        Update: {
+          amount?: number
+          code?: string
+          created_at?: string
+          id?: string
+          issuer_id?: string
+          recipient_id?: string
+          redeemed_at?: string | null
+          status?: string
+          thread_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vouchers_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "chat_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fund_protection_violations: {
+        Row: {
+          attempted_amount: number
+          available_profit_balance: number
+          created_at: string
+          deposited_balance_at_attempt: number
+          id: string
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          attempted_amount: number
+          available_profit_balance: number
+          created_at?: string
+          deposited_balance_at_attempt?: number
+          id?: string
+          kind?: string
+          user_id: string
+        }
+        Update: {
+          attempted_amount?: number
+          available_profit_balance?: number
+          created_at?: string
+          deposited_balance_at_attempt?: number
+          id?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fund_protection_violations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wallets: {
         Row: {
           balance: number
           bonus_balance: number
           created_at: string
           currency: string
+          deposited_balance: number
           id: string
           locked_balance: number
+          profit_balance: number
           updated_at: string
           user_id: string
         }
@@ -1137,8 +1350,10 @@ export type Database = {
           bonus_balance?: number
           created_at?: string
           currency?: string
+          deposited_balance?: number
           id?: string
           locked_balance?: number
+          profit_balance?: number
           updated_at?: string
           user_id: string
         }
@@ -1147,8 +1362,10 @@ export type Database = {
           bonus_balance?: number
           created_at?: string
           currency?: string
+          deposited_balance?: number
           id?: string
           locked_balance?: number
+          profit_balance?: number
           updated_at?: string
           user_id?: string
         }
@@ -1296,6 +1513,31 @@ export type Database = {
         Returns: undefined
       }
       fn_resolve_referral_code: { Args: { p_code: string }; Returns: string }
+      fn_guard_withdrawal_request: { Args: { p_amount: number }; Returns: boolean }
+      fn_get_admin_fund_violations: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+          user_id: string
+          full_name: string
+          kind: string
+          attempted_amount: number
+          available_profit_balance: number
+          deposited_balance_at_attempt: number
+          created_at: string
+        }[]
+      }
+      fn_get_or_create_thread: { Args: { p_other_user_id: string }; Returns: string }
+      fn_send_chat_message: { Args: { p_thread_id: string; p_body: string }; Returns: string }
+      fn_send_red_packet: {
+        Args: { p_recipient_id: string; p_amount: number; p_thread_id: string }
+        Returns: Json
+      }
+      fn_issue_voucher: {
+        Args: { p_recipient_id: string; p_amount: number; p_thread_id: string }
+        Returns: Json
+      }
+      fn_redeem_voucher: { Args: { p_voucher_id: string }; Returns: Json }
       fn_approve_withdrawal: {
         Args: { p_withdrawal_id: string }
         Returns: undefined
@@ -1447,6 +1689,10 @@ export type Database = {
         | "cashout"
         | "adjustment"
         | "booking_release"
+        | "gift_sent"
+        | "gift_received"
+        | "voucher_issued"
+        | "voucher_redeemed"
       withdrawal_status:
         | "pending"
         | "approved"
@@ -1652,6 +1898,10 @@ export const Constants = {
         "cashout",
         "adjustment",
         "booking_release",
+        "gift_sent",
+        "gift_received",
+        "voucher_issued",
+        "voucher_redeemed",
       ],
       withdrawal_status: [
         "pending",

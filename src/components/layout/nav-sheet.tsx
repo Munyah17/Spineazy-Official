@@ -10,6 +10,7 @@ import {
   Gift,
   Trophy,
   ShieldCheck,
+  ShieldAlert,
   Crown,
   LogOut,
   LogIn,
@@ -18,6 +19,7 @@ import {
   Tv,
   Dice5,
   Users,
+  MessageCircle,
   ArrowDownToLine,
   ArrowUpFromLine,
 } from "lucide-react";
@@ -48,10 +50,16 @@ export function NavSheet() {
           { href: "/wallet/deposit", label: "Deposit", icon: ArrowDownToLine },
           { href: "/wallet/withdraw", label: "Withdraw", icon: ArrowUpFromLine },
           { href: "/my-bets", label: "My Bets", icon: Receipt },
+          { href: "/chat", label: "Chat & Pay", icon: MessageCircle },
           { href: "/affiliates", label: "Affiliates", icon: Users },
         ]
       : []),
-    ...(isAdmin ? [{ href: "/admin", label: "Admin Dashboard", icon: ShieldCheck }] : []),
+    ...(isAdmin
+      ? [
+          { href: "/admin", label: "Admin Dashboard", icon: ShieldCheck },
+          { href: "/admin/fund-violations", label: "Fund Violations", icon: ShieldAlert },
+        ]
+      : []),
     ...(isSuperAdmin ? [{ href: "/admin/super", label: "Super Admin", icon: Crown }] : []),
   ];
 
