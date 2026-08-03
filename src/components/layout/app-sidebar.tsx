@@ -126,16 +126,6 @@ export function AppSidebar() {
         )}
       </nav>
 
-      <div className="p-3">
-        <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-primary/25 via-primary/10 to-transparent p-4">
-          <p className="text-xs font-semibold tracking-wide text-primary uppercase">100% Casino Welcome Bonus</p>
-          <p className="mt-1 text-sm text-foreground/80">Up to $100 on your first deposit</p>
-          <Button asChild size="sm" className="mt-3 w-full">
-            <Link href="/promotions">Claim Now</Link>
-          </Button>
-        </div>
-      </div>
-
       {profile && (
         <div className="flex items-center gap-3 border-t border-border p-4">
           <Link href="/account" className="flex min-w-0 flex-1 items-center gap-2.5">

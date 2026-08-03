@@ -18,6 +18,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { createClient } from "@/lib/supabase/client";
+import { useSession } from "@/lib/auth/session-provider";
+import { USE_MOCK_DATA } from "@/lib/mock/flag";
+import { useMockStore } from "@/lib/mock/store";
 import { formatMoney } from "@/lib/format";
 
 const METHODS = [
@@ -32,6 +35,10 @@ const MIN_WITHDRAWAL = 5;
 export default function WithdrawPage() {
   const supabase = createClient();
   const router = useRouter();
+  const { wallet: sessionWallet } = useSession();
+  // MOCK: remove this + the USE_MOCK_DATA branches below once real RPC calls are live.
+  const mockGuardWithdrawal = useMockStore((s) => s.guardWithdrawal);
+  const mockRequestWithdrawal = useMockStore((s) => s.requestWithdrawal);
   const [profitBalance, setProfitBalance] = useState<number | null>(null);
   const [depositedBalance, setDepositedBalance] = useState<number | null>(null);
   const [method, setMethod] = useState<(typeof METHODS)[number]["value"]>("ecocash");
@@ -41,6 +48,15 @@ export default function WithdrawPage() {
   const [blockedOpen, setBlockedOpen] = useState(false);
 
   useEffect(() => {
+    if (USE_MOCK_DATA) {
+      (async () => {
+        await Promise.resolve();
+        setProfitBalance(sessionWallet?.profit_balance ?? 0);
+        setDepositedBalance(sessionWallet?.deposited_balance ?? 0);
+      })();
+      return;
+    }
+
     (async () => {
       const {
         data: { user },
@@ -54,7 +70,7 @@ export default function WithdrawPage() {
       setProfitBalance(data?.profit_balance ?? 0);
       setDepositedBalance(data?.deposited_balance ?? 0);
     })();
-  }, [supabase]);
+  }, [supabase, sessionWallet]);
 
   const willReceive = useMemo(() => Number(amount) || 0, [amount]);
 
@@ -72,6 +88,20 @@ export default function WithdrawPage() {
     }
 
     setLoading(true);
+
+    if (USE_MOCK_DATA) {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      if (!mockGuardWithdrawal(numAmount)) {
+        setLoading(false);
+        setBlockedOpen(true);
+        return;
+      }
+      mockRequestWithdrawal(numAmount, method, `+263${phone.replace(/^0+/, "")}`);
+      setLoading(false);
+      toast.success("Withdrawal requested", { description: "We'll process this within 1-2 hours." });
+      router.push("/wallet");
+      return;
+    }
 
     const { data: allowed, error: guardError } = await supabase.rpc("fn_guard_withdrawal_request", {
       p_amount: numAmount,

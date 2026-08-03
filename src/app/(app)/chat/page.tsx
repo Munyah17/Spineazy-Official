@@ -12,6 +12,8 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
 import { useSession } from "@/lib/auth/session-provider";
+import { USE_MOCK_DATA } from "@/lib/mock/flag";
+import { MOCK_THREAD_ID, MOCK_OTHER_USER_ID, MOCK_OTHER_USER_NAME } from "@/lib/mock/data";
 import { initials } from "@/lib/format";
 
 type ThreadRow = {
@@ -32,6 +34,25 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!profile) return;
+
+    if (USE_MOCK_DATA) {
+      // MOCK: remove this branch once real chat_threads/profiles queries are live.
+      (async () => {
+        await Promise.resolve();
+        setThreads([
+          {
+            id: MOCK_THREAD_ID,
+            user_a_id: profile.id,
+            user_b_id: MOCK_OTHER_USER_ID,
+            last_message_at: new Date().toISOString(),
+            otherName: MOCK_OTHER_USER_NAME,
+          },
+        ]);
+        setLoading(false);
+      })();
+      return;
+    }
+
     (async () => {
       const { data: rows } = await supabase
         .from("chat_threads")
@@ -63,6 +84,15 @@ export default function ChatPage() {
     if (!refCode.trim()) return;
 
     setStarting(true);
+
+    if (USE_MOCK_DATA) {
+      // MOCK: remove this branch once real fn_resolve_referral_code/fn_get_or_create_thread calls are live.
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      setStarting(false);
+      router.push(`/chat/${MOCK_THREAD_ID}`);
+      return;
+    }
+
     const { data: otherUserId, error: resolveError } = await supabase.rpc("fn_resolve_referral_code", {
       p_code: refCode.trim().toUpperCase(),
     });

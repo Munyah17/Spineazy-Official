@@ -97,21 +97,21 @@
 /* Dark mode (default theme -- see ThemeProvider defaultTheme in layout.tsx) */
 .dark {
   --background: #0d0714;
-  --foreground: #f2edf7;
+  --foreground: #ffffff;
   --surface: #170f20;
   --surface-2: #1f1429;
   --card: #180f21;
-  --card-foreground: #f2edf7;
+  --card-foreground: #ffffff;
   --popover: #1c1226;
-  --popover-foreground: #f2edf7;
+  --popover-foreground: #ffffff;
   --primary: #a855f7;
   --primary-foreground: #1a0a24;
   --secondary: #241733;
-  --secondary-foreground: #f2edf7;
+  --secondary-foreground: #ffffff;
   --muted: #1d1327;
-  --muted-foreground: #9c8bad;
+  --muted-foreground: #ffffff;
   --accent: #2d1b3f;
-  --accent-foreground: #f2edf7;
+  --accent-foreground: #ffffff;
   --destructive: #ff4d5e;
   --win: #22c55e;
   --boost: #facc15;
@@ -126,11 +126,11 @@
   --chart-5: #9c8bad;
   --radius: 0.85rem;
   --sidebar: #120b1a;
-  --sidebar-foreground: #f2edf7;
+  --sidebar-foreground: #ffffff;
   --sidebar-primary: #a855f7;
   --sidebar-primary-foreground: #1a0a24;
   --sidebar-accent: #1f1429;
-  --sidebar-accent-foreground: #f2edf7;
+  --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: rgba(168, 85, 247, 0.5);
 }

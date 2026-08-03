@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { USE_MOCK_DATA } from "@/lib/mock/flag";
 import type { Database } from "@/types/database";
 
 const PROTECTED_PREFIXES = [
@@ -12,6 +13,8 @@ const PROTECTED_PREFIXES = [
 ];
 
 export async function updateSession(request: NextRequest) {
+  if (USE_MOCK_DATA) return NextResponse.next({ request }); // MOCK: remove once real auth is live
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(

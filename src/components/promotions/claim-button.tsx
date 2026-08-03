@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
+import { USE_MOCK_DATA } from "@/lib/mock/flag";
 
 export function ClaimButton({
   promotionId,
@@ -27,6 +28,16 @@ export function ClaimButton({
   async function handleClaim() {
     if (!signedIn) {
       router.push("/sign-in?next=/promotions");
+      return;
+    }
+
+    if (USE_MOCK_DATA) {
+      // MOCK: remove this branch once real user_bonuses inserts are live.
+      setLoading(true);
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      setLoading(false);
+      setIsClaimed(true);
+      toast.success("Bonus claimed!");
       return;
     }
 

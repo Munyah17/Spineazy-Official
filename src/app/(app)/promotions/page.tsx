@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
 import { Card, CardContent } from "@/components/ui/card";
 import { ClaimButton } from "@/components/promotions/claim-button";
+import { USE_MOCK_DATA } from "@/lib/mock/flag";
+import { MOCK_PROMOTIONS } from "@/lib/mock/data";
 import { formatMoney } from "@/lib/format";
 import type { Database } from "@/types/database";
 
@@ -17,21 +19,32 @@ const TYPE_META: Record<PromoType, { label: string; icon: typeof Gift }> = {
 };
 
 export default async function PromotionsPage() {
-  const publicClient = createPublicClient();
-  const supabase = await createClient();
+  let promotions: Database["public"]["Tables"]["promotions"]["Row"][] = [];
+  let claimedIds = new Set<string | null>();
+  let signedIn = false;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  if (USE_MOCK_DATA) {
+    // MOCK: remove this branch once real promotions/user_bonuses queries are live.
+    promotions = MOCK_PROMOTIONS;
+    signedIn = true;
+  } else {
+    const publicClient = createPublicClient();
+    const supabase = await createClient();
 
-  const [{ data: promotions }, claimedRes] = await Promise.all([
-    publicClient.from("promotions").select("*").eq("active", true).order("starts_at", { ascending: false }),
-    user
-      ? supabase.from("user_bonuses").select("promotion_id").eq("user_id", user.id)
-      : Promise.resolve({ data: [] as { promotion_id: string | null }[] }),
-  ]);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    signedIn = Boolean(user);
 
-  const claimedIds = new Set((claimedRes.data ?? []).map((b) => b.promotion_id));
+    const [{ data: promoData }, claimedRes] = await Promise.all([
+      publicClient.from("promotions").select("*").eq("active", true).order("starts_at", { ascending: false }),
+      user
+        ? supabase.from("user_bonuses").select("promotion_id").eq("user_id", user.id)
+        : Promise.resolve({ data: [] as { promotion_id: string | null }[] }),
+    ]);
+    promotions = promoData ?? [];
+    claimedIds = new Set((claimedRes.data ?? []).map((b) => b.promotion_id));
+  }
 
   return (
     <div className="flex flex-col gap-5 px-3 py-4 lg:px-6 lg:py-6">
@@ -68,7 +81,7 @@ export default async function PromotionsPage() {
                       amount={promo.value ?? 0}
                       wageringRequired={promo.wagering_requirement ?? 0}
                       claimed={claimedIds.has(promo.id)}
-                      signedIn={Boolean(user)}
+                      signedIn={signedIn}
                     />
                   </div>
                 </CardContent>

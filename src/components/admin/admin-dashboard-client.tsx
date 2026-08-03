@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/stat-card";
 import { createClient } from "@/lib/supabase/client";
+import { USE_MOCK_DATA } from "@/lib/mock/flag";
+import { MOCK_ADMIN_STATS, MOCK_ADMIN_ACTIVITY } from "@/lib/mock/data";
+import { useMockStore } from "@/lib/mock/store";
 import { formatMoney } from "@/lib/format";
 
 type AdminStats = {
@@ -36,12 +39,26 @@ const ACTIVITY_LABEL: Record<string, string> = {
 
 export function AdminDashboardClient() {
   const supabase = createClient();
+  // MOCK: remove this + the USE_MOCK_DATA branches below once real RPC calls are live.
+  const mockPending = useMockStore((s) => s.pendingWithdrawals);
+  const mockApprove = useMockStore((s) => s.approveWithdrawal);
+  const mockReject = useMockStore((s) => s.rejectWithdrawal);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [activity, setActivity] = useState<Activity[]>([]);
   const [pending, setPending] = useState<PendingWithdrawal[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (USE_MOCK_DATA) {
+      (async () => {
+        await Promise.resolve();
+        setStats({ ...MOCK_ADMIN_STATS, pending_withdrawals: mockPending.length });
+        setActivity(MOCK_ADMIN_ACTIVITY);
+        setPending(mockPending);
+      })();
+      return;
+    }
+
     (async () => {
       const [{ data: statsData }, { data: activityData }, { data: pendingData }] = await Promise.all([
         supabase.rpc("fn_get_admin_stats"),
@@ -52,10 +69,18 @@ export function AdminDashboardClient() {
       if (activityData) setActivity(activityData as Activity[]);
       if (pendingData) setPending(pendingData as unknown as PendingWithdrawal[]);
     })();
-  }, [supabase]);
+  }, [supabase, mockPending]);
 
   async function approve(id: string) {
     setBusyId(id);
+    if (USE_MOCK_DATA) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      mockApprove(id);
+      setBusyId(null);
+      toast.success("Withdrawal approved");
+      return;
+    }
+
     const { error } = await supabase.rpc("fn_approve_withdrawal", { p_withdrawal_id: id });
     setBusyId(null);
     if (error) {
@@ -68,6 +93,14 @@ export function AdminDashboardClient() {
 
   async function reject(id: string) {
     setBusyId(id);
+    if (USE_MOCK_DATA) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      mockReject(id);
+      setBusyId(null);
+      toast.success("Withdrawal rejected");
+      return;
+    }
+
     const { error } = await supabase.rpc("fn_reject_withdrawal", { p_withdrawal_id: id, p_reason: "Rejected by admin" });
     setBusyId(null);
     if (error) {

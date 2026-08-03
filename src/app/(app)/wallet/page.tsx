@@ -1,13 +1,22 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { ArrowDownToLine, ArrowUpFromLine, Wallet as WalletIcon, Gift, TrendingDown, MessageCircle } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatCard } from "@/components/stat-card";
 import { SectionHeader } from "@/components/section-header";
+import { createClient } from "@/lib/supabase/client";
+import { useSession } from "@/lib/auth/session-provider";
+import { USE_MOCK_DATA } from "@/lib/mock/flag";
+import { useMockStore } from "@/lib/mock/store";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import type { Database } from "@/types/database";
+
+type WalletTransaction = Database["public"]["Tables"]["wallet_transactions"]["Row"];
 
 const TX_LABEL: Record<string, string> = {
   deposit: "Deposit",
@@ -28,27 +37,53 @@ const TX_LABEL: Record<string, string> = {
 
 const CREDIT_TYPES = ["deposit", "bet_payout", "bet_refund", "bonus_credit", "cashout", "gift_received", "voucher_redeemed"];
 
-export default async function WalletPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in?next=/wallet");
+export default function WalletPage() {
+  const router = useRouter();
+  const supabase = createClient();
+  const { profile, wallet } = useSession();
+  // MOCK: remove this + the USE_MOCK_DATA branches below once real queries are live.
+  const mockTransactions = useMockStore((s) => s.transactions);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [totalDeposits, setTotalDeposits] = useState(0);
+  const [totalWithdrawals, setTotalWithdrawals] = useState(0);
 
-  const [{ data: wallet }, { data: deposits }, { data: withdrawals }, { data: transactions }] = await Promise.all([
-    supabase.from("wallets").select("*").eq("user_id", user.id).single(),
-    supabase.from("deposits").select("amount").eq("user_id", user.id).eq("status", "completed"),
-    supabase.from("withdrawals").select("amount").eq("user_id", user.id).eq("status", "completed"),
-    supabase
-      .from("wallet_transactions")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(8),
-  ]);
+  useEffect(() => {
+    if (USE_MOCK_DATA) {
+      (async () => {
+        await Promise.resolve();
+        setTransactions(mockTransactions.slice(0, 8));
+        setTotalDeposits(
+          mockTransactions.filter((t) => t.type === "deposit").reduce((sum, t) => sum + Number(t.amount), 0)
+        );
+        setTotalWithdrawals(
+          mockTransactions.filter((t) => t.type === "withdrawal").reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0)
+        );
+      })();
+      return;
+    }
 
-  const totalDeposits = (deposits ?? []).reduce((sum, d) => sum + Number(d.amount), 0);
-  const totalWithdrawals = (withdrawals ?? []).reduce((sum, w) => sum + Number(w.amount), 0);
+    if (!profile) {
+      router.push("/sign-in?next=/wallet");
+      return;
+    }
+
+    (async () => {
+      const [{ data: deposits }, { data: withdrawals }, { data: txs }] = await Promise.all([
+        supabase.from("deposits").select("amount").eq("user_id", profile.id).eq("status", "completed"),
+        supabase.from("withdrawals").select("amount").eq("user_id", profile.id).eq("status", "completed"),
+        supabase
+          .from("wallet_transactions")
+          .select("*")
+          .eq("user_id", profile.id)
+          .order("created_at", { ascending: false })
+          .limit(8),
+      ]);
+      setTotalDeposits((deposits ?? []).reduce((sum, d) => sum + Number(d.amount), 0));
+      setTotalWithdrawals((withdrawals ?? []).reduce((sum, w) => sum + Number(w.amount), 0));
+      setTransactions(txs ?? []);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile, mockTransactions]);
 
   return (
     <div className="flex flex-col gap-6 px-3 py-4 lg:px-6 lg:py-6">
@@ -93,7 +128,7 @@ export default async function WalletPage() {
 
       <section>
         <SectionHeader title="Recent Transactions" href="/my-bets" action="View All" />
-        {transactions && transactions.length > 0 ? (
+        {transactions.length > 0 ? (
           <Card>
             <CardContent className="divide-y divide-border p-0">
               {transactions.map((tx) => {

@@ -3,21 +3,34 @@ import Link from "next/link";
 import { ArrowLeft, Info, History as HistoryIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { GameFrame } from "@/components/casino/game-frame";
-import { formatMoney } from "@/lib/format";
+import { WalletBalancePill } from "@/components/casino/wallet-balance-pill";
+import { USE_MOCK_DATA } from "@/lib/mock/flag";
+import { MOCK_GAMES } from "@/lib/mock/data";
+import type { CasinoGame } from "@/lib/data/casino-games";
 
 export default async function GamePlayerPage({ params }: { params: Promise<{ gameKey: string }> }) {
   const { gameKey } = await params;
-  const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect(`/sign-in?next=/casino/${gameKey}`);
+  let game: CasinoGame | null | undefined;
 
-  const [{ data: game }, { data: wallet }] = await Promise.all([
-    supabase.from("casino_games").select("*").eq("game_key", gameKey).eq("active", true).single(),
-    supabase.from("wallets").select("balance").eq("user_id", user.id).single(),
-  ]);
+  if (USE_MOCK_DATA) {
+    // MOCK: remove this branch once real auth + casino_games queries are live.
+    game = MOCK_GAMES.find((g) => g.game_key === gameKey) ?? null;
+  } else {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) redirect(`/sign-in?next=/casino/${gameKey}`);
+
+    const { data: gameData } = await supabase
+      .from("casino_games")
+      .select("*")
+      .eq("game_key", gameKey)
+      .eq("active", true)
+      .single();
+    game = gameData;
+  }
 
   if (!game) notFound();
 
@@ -31,9 +44,7 @@ export default async function GamePlayerPage({ params }: { params: Promise<{ gam
           <p className="truncate text-sm font-semibold text-foreground">{game.title}</p>
           <p className="truncate text-xs text-muted-foreground">{game.provider}</p>
         </div>
-        <span className="rounded-lg bg-secondary px-3 py-1.5 text-sm font-semibold text-secondary-foreground">
-          {formatMoney(wallet?.balance ?? 0)}
-        </span>
+        <WalletBalancePill />
         <button className="hidden text-muted-foreground hover:text-foreground sm:block" aria-label="History">
           <HistoryIcon className="size-5" />
         </button>

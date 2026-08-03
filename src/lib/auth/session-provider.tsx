@@ -3,6 +3,8 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { USE_MOCK_DATA } from "@/lib/mock/flag";
+import { useMockStore } from "@/lib/mock/store";
 import type { Database } from "@/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -40,14 +42,19 @@ export function SessionProvider({
   const [profile, setProfile] = useState<Profile | null>(initialProfile);
   const [wallet, setWallet] = useState<Wallet | null>(initialWallet);
   const [loading, setLoading] = useState(false);
+  // MOCK: remove this + the USE_MOCK_DATA branches below once real auth/wallet queries are live.
+  const mockWallet = useMockStore((s) => s.wallet);
+  const effectiveWallet = USE_MOCK_DATA ? mockWallet : wallet;
 
   const refreshWallet = async () => {
+    if (USE_MOCK_DATA) return; // mock store updates reactively, nothing to refresh
     if (!profile) return;
     const { data } = await supabase.from("wallets").select("*").eq("user_id", profile.id).single();
     if (data) setWallet(data);
   };
 
   useEffect(() => {
+    if (USE_MOCK_DATA) return;
     if (!profile) return;
 
     const channel = supabase
@@ -66,6 +73,7 @@ export function SessionProvider({
   }, [profile, supabase]);
 
   useEffect(() => {
+    if (USE_MOCK_DATA) return;
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
@@ -79,6 +87,7 @@ export function SessionProvider({
   }, [supabase, router]);
 
   const signOut = async () => {
+    if (USE_MOCK_DATA) return; // mock mode has no real session to sign out of
     setLoading(true);
     await supabase.auth.signOut();
     setLoading(false);
@@ -91,7 +100,7 @@ export function SessionProvider({
       value={{
         userId: profile?.id ?? null,
         profile,
-        wallet,
+        wallet: effectiveWallet,
         loading,
         refreshWallet,
         signOut,
