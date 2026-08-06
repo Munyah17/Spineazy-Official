@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { createClient } from "@/lib/supabase/client";
+import { USE_MOCK_DATA } from "@/lib/mock/flag";
+import { useMockStore } from "@/lib/mock/store";
 
 export default function SignUpPage() {
   return (
@@ -24,6 +26,7 @@ function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const refCode = searchParams.get("ref");
+  const setMockSignedIn = useMockStore((s) => s.setSignedIn);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -48,6 +51,17 @@ function SignUpForm() {
     }
     if (password.length < 8) {
       toast.error("Password must be at least 8 characters");
+      return;
+    }
+
+    if (USE_MOCK_DATA) {
+      // MOCK: remove this branch once real Supabase auth is live.
+      setLoading(true);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setMockSignedIn(true);
+      setLoading(false);
+      toast.success("Account created!", { description: "Welcome to Spineazy." });
+      router.push("/");
       return;
     }
 

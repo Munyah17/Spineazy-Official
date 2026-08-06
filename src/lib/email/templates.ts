@@ -51,7 +51,7 @@ export function depositCompletedEmail(amount: string, method: string) {
 export function withdrawalRequestedEmail(amount: string, method: string) {
   return layout(
     "Withdrawal requested",
-    `We've received your withdrawal request for <strong style="color:#a855f7;">${amount}</strong> via ${method}. It's held pending review and typically processed within 1-2 hours.`,
+    `We've received your withdrawal request for <strong style="color:#a855f7;">${amount}</strong> via ${method}. It's held pending review and typically processed within 48 hours.`,
     "View Wallet",
     `${APP_URL}/wallet`
   );

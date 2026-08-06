@@ -1,9 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { SessionProvider } from "@/lib/auth/session-provider";
-import { SiteHeader } from "@/components/layout/site-header";
-import { BottomNav } from "@/components/layout/bottom-nav";
-import { AppSidebar } from "@/components/layout/app-sidebar";
-import { Footer } from "@/components/layout/footer";
+import { AppShell } from "@/components/layout/app-shell";
 import { USE_MOCK_DATA } from "@/lib/mock/flag";
 import { MOCK_PROFILE, MOCK_WALLET } from "@/lib/mock/data";
 
@@ -33,17 +30,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <SessionProvider initialProfile={profile} initialWallet={wallet}>
-      <div className="flex min-h-svh w-full">
-        <AppSidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <SiteHeader />
-          <main className="mx-auto min-w-0 w-full max-w-[1600px] flex-1">{children}</main>
-          <div className="pb-20 lg:pb-0">
-            <Footer />
-          </div>
-        </div>
-      </div>
-      <BottomNav />
+      <AppShell>{children}</AppShell>
     </SessionProvider>
   );
 }

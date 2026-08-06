@@ -98,7 +98,7 @@ export default function WithdrawPage() {
       }
       mockRequestWithdrawal(numAmount, method, `+263${phone.replace(/^0+/, "")}`);
       setLoading(false);
-      toast.success("Withdrawal requested", { description: "We'll process this within 1-2 hours." });
+      toast.success("Withdrawal requested", { description: "We'll process this within 48 hours." });
       router.push("/wallet");
       return;
     }
@@ -131,7 +131,7 @@ export default function WithdrawPage() {
       return;
     }
 
-    toast.success("Withdrawal requested", { description: "We'll process this within 1-2 hours." });
+    toast.success("Withdrawal requested", { description: "We'll process this within 48 hours." });
     router.push("/wallet");
     router.refresh();
   }
@@ -219,7 +219,7 @@ export default function WithdrawPage() {
         <Button type="submit" disabled={loading} className="w-full glow-primary">
           {loading ? "Submitting…" : "Submit Withdrawal"}
         </Button>
-        <p className="text-center text-xs text-muted-foreground">Withdrawals are processed within 1-2 hours.</p>
+        <p className="text-center text-xs text-muted-foreground">Withdrawals are processed within 48 hours.</p>
       </form>
 
       <Dialog open={blockedOpen} onOpenChange={setBlockedOpen}>

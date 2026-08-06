@@ -67,12 +67,14 @@ function applyDelta(wallet: Wallet, type: WalletTxType, delta: number): Wallet {
 }
 
 interface MockState {
+  signedIn: boolean;
   wallet: Wallet;
   transactions: WalletTransaction[];
   chatMessages: MockChatMessage[];
   pendingWithdrawals: typeof MOCK_PENDING_WITHDRAWALS;
   fundViolations: typeof MOCK_FUND_VIOLATIONS;
 
+  setSignedIn: (signedIn: boolean) => void;
   record: (type: WalletTxType, delta: number, description: string, referenceType: string) => void;
   deposit: (amount: number, description: string) => void;
   guardWithdrawal: (amount: number) => boolean;
@@ -87,6 +89,7 @@ interface MockState {
 }
 
 export const useMockStore = create<MockState>((set, get) => ({
+  signedIn: true,
   wallet: { ...MOCK_WALLET },
   transactions: [...MOCK_TRANSACTIONS],
   chatMessages: [
@@ -108,6 +111,8 @@ export const useMockStore = create<MockState>((set, get) => ({
   ],
   pendingWithdrawals: [...MOCK_PENDING_WITHDRAWALS],
   fundViolations: [...MOCK_FUND_VIOLATIONS],
+
+  setSignedIn: (signedIn) => set({ signedIn }),
 
   record: (type, delta, description, referenceType) => {
     set((state) => {

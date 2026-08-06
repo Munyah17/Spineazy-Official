@@ -236,7 +236,7 @@ export default function ChatThreadPage({ params }: { params: Promise<{ threadId:
         </span>
       </div>
 
-      <div className="flex-1 space-y-2 overflow-y-auto px-3 py-4">
+      <div className="flex flex-1 flex-col justify-end gap-2 overflow-y-auto px-3 py-4">
         {loading ? (
           <p className="text-center text-sm text-muted-foreground">Loading…</p>
         ) : displayMessages.length === 0 ? (
