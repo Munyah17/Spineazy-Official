@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MessageCircle, Send } from "lucide-react";
+import { MessageCircle, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
 import { useSession } from "@/lib/auth/session-provider";
 import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { MOCK_THREAD_ID, MOCK_OTHER_USER_ID, MOCK_OTHER_USER_NAME } from "@/lib/mock/data";
+import { MOCK_THREAD_ID, MOCK_OTHER_USER_ID, MOCK_OTHER_USER_NAME, MOCK_USER_DIRECTORY } from "@/lib/mock/data";
 import { initials } from "@/lib/format";
 
 type ThreadRow = {
@@ -23,14 +23,18 @@ type ThreadRow = {
   last_message_at: string;
 };
 
+type UserResult = { id: string; full_name: string; avatar_url: string | null };
+
 export default function ChatPage() {
   const { profile } = useSession();
   const supabase = createClient();
   const router = useRouter();
   const [threads, setThreads] = useState<(ThreadRow & { otherName: string })[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refCode, setRefCode] = useState("");
-  const [starting, setStarting] = useState(false);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<UserResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [starting, setStarting] = useState<string | null>(null);
 
   useEffect(() => {
     if (!profile) return;
@@ -79,34 +83,47 @@ export default function ChatPage() {
     })();
   }, [profile, supabase]);
 
-  async function startChat(e: React.FormEvent) {
-    e.preventDefault();
-    if (!refCode.trim()) return;
+  useEffect(() => {
+    const trimmed = query.trim();
+    const timer = setTimeout(async () => {
+      if (trimmed.length < 2) {
+        setResults([]);
+        return;
+      }
 
-    setStarting(true);
+      setSearching(true);
+
+      if (USE_MOCK_DATA) {
+        // MOCK: remove this branch once fn_search_users is live.
+        const q = query.trim().toLowerCase();
+        setResults(MOCK_USER_DIRECTORY.filter((u) => u.full_name.toLowerCase().includes(q)));
+        setSearching(false);
+        return;
+      }
+
+      const { data } = await supabase.rpc("fn_search_users", { p_query: query.trim(), p_limit: 8 });
+      setResults((data as unknown as UserResult[]) ?? []);
+      setSearching(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query, supabase]);
+
+  async function startChat(otherUserId: string) {
+    setStarting(otherUserId);
 
     if (USE_MOCK_DATA) {
-      // MOCK: remove this branch once real fn_resolve_referral_code/fn_get_or_create_thread calls are live.
+      // MOCK: remove this branch once real fn_get_or_create_thread calls are live.
       await new Promise((resolve) => setTimeout(resolve, 300));
-      setStarting(false);
+      setStarting(null);
       router.push(`/chat/${MOCK_THREAD_ID}`);
-      return;
-    }
-
-    const { data: otherUserId, error: resolveError } = await supabase.rpc("fn_resolve_referral_code", {
-      p_code: refCode.trim().toUpperCase(),
-    });
-
-    if (resolveError || !otherUserId) {
-      setStarting(false);
-      toast.error("No player found with that referral code");
       return;
     }
 
     const { data: threadId, error } = await supabase.rpc("fn_get_or_create_thread", {
       p_other_user_id: otherUserId,
     });
-    setStarting(false);
+    setStarting(null);
 
     if (error || !threadId) {
       toast.error("Couldn't start chat", { description: error?.message });
@@ -136,20 +153,46 @@ export default function ChatPage() {
         </p>
       </div>
 
-      <form onSubmit={startChat} className="flex flex-col gap-1.5">
-        <Label htmlFor="refCode">Start a chat by referral code</Label>
-        <div className="flex gap-2">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="userSearch">Find a player</Label>
+        <div className="relative">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            id="refCode"
-            placeholder="e.g. AB12CD34"
-            value={refCode}
-            onChange={(e) => setRefCode(e.target.value)}
+            id="userSearch"
+            placeholder="Search by name…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="pl-9"
           />
-          <Button type="submit" disabled={starting} size="icon" aria-label="Start chat">
-            <Send className="size-4" />
-          </Button>
         </div>
-      </form>
+
+        {query.trim().length >= 2 && (
+          <div className="mt-1 flex flex-col gap-1">
+            {searching ? (
+              <p className="px-1 py-2 text-xs text-muted-foreground">Searching…</p>
+            ) : results.length > 0 ? (
+              results.map((u) => (
+                <button
+                  key={u.id}
+                  type="button"
+                  disabled={starting !== null}
+                  onClick={() => startChat(u.id)}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors hover:bg-accent disabled:opacity-60"
+                >
+                  <Avatar size="sm">
+                    <AvatarFallback className="bg-primary text-xs font-bold text-primary-foreground">
+                      {initials(u.full_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium text-foreground">{u.full_name}</span>
+                </button>
+              ))
+            ) : (
+              <p className="px-1 py-2 text-xs text-muted-foreground">No players found.</p>
+            )}
+          </div>
+        )}
+      </div>
 
       {loading ? (
         <div className="flex flex-col gap-2">
@@ -175,7 +218,7 @@ export default function ChatPage() {
       ) : (
         <p className="flex items-center gap-2 rounded-2xl bg-card p-6 text-sm text-muted-foreground ring-1 ring-foreground/10">
           <MessageCircle className="size-4 shrink-0" />
-          No conversations yet. Start one with a friend&apos;s referral code above.
+          No conversations yet. Search for a player above to start one.
         </p>
       )}
     </div>

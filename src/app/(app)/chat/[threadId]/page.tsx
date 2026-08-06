@@ -225,7 +225,7 @@ export default function ChatThreadPage({ params }: { params: Promise<{ threadId:
   if (!profile) return null;
 
   return (
-    <div className="mx-auto flex h-[calc(100svh-4rem)] w-full max-w-lg flex-col lg:h-[calc(100svh-4.5rem)]">
+    <div className="mx-auto flex h-[calc(100svh-8rem)] w-full max-w-lg flex-col lg:h-[calc(100svh-4.5rem)]">
       <div className="flex items-center gap-3 border-b border-border px-3 py-3">
         <Link href="/chat" className="text-muted-foreground hover:text-foreground" aria-label="Back">
           <ArrowLeft className="size-5" />

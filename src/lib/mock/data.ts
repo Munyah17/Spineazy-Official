@@ -274,3 +274,12 @@ export const MOCK_OTHER_USER_ID = "00000000-0000-0000-0000-000000000002";
 export const MOCK_OTHER_USER_NAME = "Rutendo Chuma";
 
 export const MOCK_THREAD_ID = "20000000-0000-0000-0000-000000000001";
+
+// Small directory used by the mock chat "search for a player" flow.
+export const MOCK_USER_DIRECTORY = [
+  { id: MOCK_OTHER_USER_ID, full_name: MOCK_OTHER_USER_NAME, avatar_url: null as string | null },
+  { id: "00000000-0000-0000-0000-000000000003", full_name: "Kudakwashe Sibanda", avatar_url: null },
+  { id: "00000000-0000-0000-0000-000000000004", full_name: "Tapiwa Gumbo", avatar_url: null },
+  { id: "00000000-0000-0000-0000-000000000005", full_name: "Nyasha Chikwanha", avatar_url: null },
+  { id: "00000000-0000-0000-0000-000000000006", full_name: "Blessing Ncube", avatar_url: null },
+];

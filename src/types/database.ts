@@ -1513,6 +1513,10 @@ export type Database = {
         Returns: undefined
       }
       fn_resolve_referral_code: { Args: { p_code: string }; Returns: string }
+      fn_search_users: {
+        Args: { p_query: string; p_limit?: number }
+        Returns: { id: string; full_name: string; avatar_url: string | null }[]
+      }
       fn_guard_withdrawal_request: { Args: { p_amount: number }; Returns: boolean }
       fn_get_admin_fund_violations: {
         Args: { p_limit?: number }
