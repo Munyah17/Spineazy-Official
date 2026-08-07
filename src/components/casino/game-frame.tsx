@@ -30,7 +30,7 @@ export function GameFrame({ gameKey, title }: { gameKey: string; title: string }
             status: "unavailable",
             message:
               data.error === "not_configured"
-                ? "This game will be playable as soon as the SoftGamings aggregator integration goes live."
+                ? "This game is launching soon — check back shortly."
                 : (data.message ?? "This game couldn't be launched right now."),
           });
         }

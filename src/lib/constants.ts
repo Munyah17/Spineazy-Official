@@ -1,1 +1,1 @@
-export const SPORTSBOOK_URL = "https://eazybet.vercel.app";
+export const SPORTSBOOK_URL = "https://www.eazybet.co.zw";

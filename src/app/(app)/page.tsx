@@ -48,7 +48,7 @@ export default async function LobbyPage() {
           </div>
         ) : (
           <p className="rounded-2xl bg-card p-6 text-sm text-muted-foreground ring-1 ring-foreground/10">
-            No games published yet. Once the SoftGamings catalogue is synced this grid fills automatically.
+            No games published yet. Check back soon.
           </p>
         )}
       </section>

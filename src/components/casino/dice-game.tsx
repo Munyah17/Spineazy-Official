@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Dice5, ShieldCheck, RefreshCw, ChevronDown } from "lucide-react";
+import { Dice5 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,13 +12,14 @@ import { DICE_MIN_TARGET, DICE_MAX_TARGET, diceMultiplier, diceWinChance, type D
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
+// Fairness (server seed commit/reveal, HMAC verification) is real and
+// enforced server-side -- see src/lib/games/provably-fair.ts and
+// src/app/api/casino/demo/* -- but that's internal integrity plumbing, not
+// something to surface to players. Keep this screen to the game itself.
 export function DiceGame() {
   const mock = useMockDiceStore();
   const [ready, setReady] = useState(false);
   const [demoBalance, setDemoBalance] = useState(0);
-  const [serverSeedHash, setServerSeedHash] = useState("");
-  const [clientSeed, setClientSeed] = useState("");
-  const [nonce, setNonce] = useState(0);
   const [history, setHistory] = useState<DiceRoundRecord[]>([]);
 
   const [betAmount, setBetAmount] = useState("1");
@@ -26,18 +27,12 @@ export function DiceGame() {
   const [direction, setDirection] = useState<DiceDirection>("under");
   const [rolling, setRolling] = useState(false);
   const [lastRoll, setLastRoll] = useState<{ roll: number; won: boolean } | null>(null);
-  const [fairnessOpen, setFairnessOpen] = useState(false);
-  const [newClientSeed, setNewClientSeed] = useState("");
 
   useEffect(() => {
     if (!USE_MOCK_DATA) return; // MOCK: remove once the UI calls /api/casino/demo/* directly.
     (async () => {
       await mock.init();
-      const s = useMockDiceStore.getState();
-      setDemoBalance(s.demoBalance);
-      setServerSeedHash(s.serverSeedHash);
-      setClientSeed(s.clientSeed);
-      setNonce(s.nonce);
+      setDemoBalance(useMockDiceStore.getState().demoBalance);
       setReady(true);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -64,7 +59,6 @@ export function DiceGame() {
         const result = await mock.play(amount, target, direction);
         const s = useMockDiceStore.getState();
         setDemoBalance(s.demoBalance);
-        setNonce(s.nonce);
         setHistory(s.history);
         setLastRoll({ roll: result.roll, won: result.won });
         if (result.won) toast.success(`You won ${formatMoney(result.payout)}!`);
@@ -73,20 +67,6 @@ export function DiceGame() {
       toast.error((e as Error).message);
     } finally {
       setRolling(false);
-    }
-  }
-
-  async function handleRotateSeed() {
-    if (USE_MOCK_DATA) {
-      const { revealedServerSeed, revealedServerSeedHash } = await mock.rotateSeed(newClientSeed || undefined);
-      const s = useMockDiceStore.getState();
-      setServerSeedHash(s.serverSeedHash);
-      setClientSeed(s.clientSeed);
-      setNonce(s.nonce);
-      setNewClientSeed("");
-      toast.success("Seed rotated", {
-        description: `Previous seed revealed: ${revealedServerSeed.slice(0, 16)}… (hash ${revealedServerSeedHash.slice(0, 12)}…)`,
-      });
     }
   }
 
@@ -229,49 +209,6 @@ export function DiceGame() {
             {rolling ? "Rolling…" : "Roll"}
           </Button>
         </CardContent>
-      </Card>
-
-      <Card>
-        <button
-          type="button"
-          onClick={() => setFairnessOpen((v) => !v)}
-          className="flex w-full items-center gap-2 px-4 py-3 text-left"
-        >
-          <ShieldCheck className="size-4 text-win" />
-          <span className="flex-1 text-sm font-semibold text-foreground">Provably Fair</span>
-          <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", fairnessOpen && "rotate-180")} />
-        </button>
-        {fairnessOpen && (
-          <CardContent className="flex flex-col gap-3 border-t border-border pt-3 text-xs">
-            <p className="text-muted-foreground">
-              Every roll is HMAC-SHA256(server seed, client seed:nonce). The server seed&apos;s hash is committed
-              below before you play — rotate it any time to reveal the seed and verify past rolls yourself.
-            </p>
-            <div className="flex flex-col gap-1">
-              <span className="text-muted-foreground">Server Seed Hash (commitment)</span>
-              <span className="truncate rounded-lg bg-secondary px-2.5 py-1.5 font-mono text-foreground">{serverSeedHash}</span>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-muted-foreground">Client Seed</span>
-              <span className="truncate rounded-lg bg-secondary px-2.5 py-1.5 font-mono text-foreground">{clientSeed}</span>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-muted-foreground">Nonce</span>
-              <span className="truncate rounded-lg bg-secondary px-2.5 py-1.5 font-mono text-foreground">{nonce}</span>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                placeholder="New client seed (optional)"
-                value={newClientSeed}
-                onChange={(e) => setNewClientSeed(e.target.value)}
-                className="text-xs"
-              />
-              <Button type="button" variant="outline" size="sm" onClick={handleRotateSeed}>
-                <RefreshCw className="size-3.5" /> Rotate
-              </Button>
-            </div>
-          </CardContent>
-        )}
       </Card>
 
       {history.length > 0 && (
