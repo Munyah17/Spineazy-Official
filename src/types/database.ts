@@ -383,6 +383,120 @@ export type Database = {
           },
         ]
       }
+      casino_demo_dice_rounds: {
+        Row: {
+          bet_amount: number
+          client_seed: string
+          created_at: string
+          direction: string
+          id: string
+          multiplier: number
+          nonce: number
+          payout: number
+          roll: number
+          server_seed_hash: string
+          session_id: string
+          status: string
+          target: number
+          user_id: string
+        }
+        Insert: {
+          bet_amount: number
+          client_seed: string
+          created_at?: string
+          direction: string
+          id?: string
+          multiplier: number
+          nonce: number
+          payout?: number
+          roll: number
+          server_seed_hash: string
+          session_id: string
+          status: string
+          target: number
+          user_id: string
+        }
+        Update: {
+          bet_amount?: number
+          client_seed?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          multiplier?: number
+          nonce?: number
+          payout?: number
+          roll?: number
+          server_seed_hash?: string
+          session_id?: string
+          status?: string
+          target?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "casino_demo_dice_rounds_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "casino_demo_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "casino_demo_dice_rounds_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      casino_demo_seed_reveals: {
+        Row: {
+          client_seed: string
+          id: string
+          revealed_at: string
+          rounds_used: number
+          server_seed: string
+          server_seed_hash: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          client_seed: string
+          id?: string
+          revealed_at?: string
+          rounds_used: number
+          server_seed: string
+          server_seed_hash: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          client_seed?: string
+          id?: string
+          revealed_at?: string
+          rounds_used?: number
+          server_seed?: string
+          server_seed_hash?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "casino_demo_seed_reveals_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "casino_demo_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "casino_demo_seed_reveals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       casino_demo_crash_rounds: {
         Row: {
           cashed_out_at: number | null
@@ -439,26 +553,38 @@ export type Database = {
       }
       casino_demo_sessions: {
         Row: {
+          client_seed: string | null
           created_at: string
           demo_balance: number
           game_key: string
           id: string
+          nonce: number
+          server_seed: string | null
+          server_seed_hash: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          client_seed?: string | null
           created_at?: string
           demo_balance?: number
           game_key: string
           id?: string
+          nonce?: number
+          server_seed?: string | null
+          server_seed_hash?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          client_seed?: string | null
           created_at?: string
           demo_balance?: number
           game_key?: string
           id?: string
+          nonce?: number
+          server_seed?: string | null
+          server_seed_hash?: string | null
           updated_at?: string
           user_id?: string
         }

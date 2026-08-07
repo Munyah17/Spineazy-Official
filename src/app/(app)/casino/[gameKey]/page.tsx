@@ -3,10 +3,16 @@ import Link from "next/link";
 import { ArrowLeft, Info, History as HistoryIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { GameFrame } from "@/components/casino/game-frame";
+import { DiceGame } from "@/components/casino/dice-game";
 import { WalletBalancePill } from "@/components/casino/wallet-balance-pill";
 import { USE_MOCK_DATA } from "@/lib/mock/flag";
 import { MOCK_GAMES } from "@/lib/mock/data";
+import { cn } from "@/lib/utils";
 import type { CasinoGame } from "@/lib/data/casino-games";
+
+// In-house originals render their own full UI instead of the aggregator
+// iframe host (GameFrame). Add new original game_keys here as they ship.
+const ORIGINALS = new Set(["dice-roll"]);
 
 export default async function GamePlayerPage({ params }: { params: Promise<{ gameKey: string }> }) {
   const { gameKey } = await params;
@@ -53,8 +59,12 @@ export default async function GamePlayerPage({ params }: { params: Promise<{ gam
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 bg-black">
-        <GameFrame gameKey={game.game_key} title={game.title} />
+      <div className={cn("min-h-0 flex-1", ORIGINALS.has(game.game_key) ? "bg-background" : "bg-black")}>
+        {ORIGINALS.has(game.game_key) ? (
+          <DiceGame />
+        ) : (
+          <GameFrame gameKey={game.game_key} title={game.title} />
+        )}
       </div>
     </div>
   );

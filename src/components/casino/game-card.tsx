@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Play, Dice5, Tv, Rocket, Gamepad2, type LucideIcon } from "lucide-react";
+import { Play, Dice5, Tv, Rocket, Gamepad2, Sparkles, type LucideIcon } from "lucide-react";
 import { gameArtGradient, gameArtRotation } from "@/lib/game-art";
 import type { CasinoGame } from "@/lib/data/casino-games";
 
@@ -8,6 +8,7 @@ const CATEGORY_ICON: Record<string, LucideIcon> = {
   live: Tv,
   crash: Rocket,
   virtuals: Gamepad2,
+  originals: Sparkles,
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -15,6 +16,7 @@ const CATEGORY_LABEL: Record<string, string> = {
   live: "Live",
   crash: "Crash",
   virtuals: "Instant",
+  originals: "Originals",
 };
 
 export function GameCard({ game }: { game: CasinoGame }) {

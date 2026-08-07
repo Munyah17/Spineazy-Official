@@ -43,6 +43,7 @@ export const MOCK_WALLET: Wallet = {
 };
 
 export const MOCK_GAMES: CasinoGame[] = [
+  { id: "g0", game_key: "dice-roll", title: "Roll the Dice", provider: "Spineazy Originals", category: "originals", thumbnail_url: null, active: true, display_order: 0, demo_available: true, rtp: 99 },
   { id: "g1", game_key: "sweet-bonanza", title: "Sweet Bonanza", provider: "Pragmatic Play", category: "slots", thumbnail_url: null, active: true, display_order: 1, demo_available: true, rtp: 96.48 },
   { id: "g2", game_key: "gates-of-olympus", title: "Gates of Olympus", provider: "Pragmatic Play", category: "slots", thumbnail_url: null, active: true, display_order: 2, demo_available: true, rtp: 96.5 },
   { id: "g3", game_key: "book-of-dead", title: "Book of Dead", provider: "Play'n GO", category: "slots", thumbnail_url: null, active: true, display_order: 3, demo_available: true, rtp: 96.21 },
