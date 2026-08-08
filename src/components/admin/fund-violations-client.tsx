@@ -42,14 +42,11 @@ export function FundViolationsClient() {
   }, [supabase, mockViolations]);
 
   return (
-    <div className="flex flex-col gap-6 px-3 py-4 lg:px-6 lg:py-6">
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Fund Protection Log</h1>
-        <p className="text-sm text-muted-foreground">
-          Attempts to withdraw or gift deposited (bet-only) funds. These are always blocked automatically — this is
-          the audit trail.
-        </p>
-      </div>
+    <div className="flex flex-col gap-5 px-4 py-5 lg:px-6 lg:py-6">
+      <p className="text-sm text-muted-foreground">
+        Attempts to withdraw or gift deposited (bet-only) funds. These are always blocked automatically — this is
+        the audit trail.
+      </p>
 
       {violations === null ? (
         <div className="flex flex-col gap-2">
@@ -67,7 +64,7 @@ export function FundViolationsClient() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-foreground">{v.full_name}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="truncate text-xs text-muted-foreground">
                     Tried {formatMoney(v.attempted_amount)} · had {formatMoney(v.available_profit_balance)}{" "}
                     withdrawable + {formatMoney(v.deposited_balance_at_attempt)} bet-only ·{" "}
                     {new Date(v.created_at).toLocaleString("en-US", {

@@ -14,8 +14,8 @@ export const MOCK_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 export const MOCK_PROFILE: Profile = {
   id: MOCK_USER_ID,
-  full_name: "Tendai Moyo",
-  email: "tendai@example.com",
+  full_name: "Munyah Griezmann",
+  email: "munyamuzvidziwa19@gmail.com",
   phone: "+263712345678",
   avatar_url: null,
   country: "Zimbabwe",
@@ -283,4 +283,16 @@ export const MOCK_USER_DIRECTORY = [
   { id: "00000000-0000-0000-0000-000000000004", full_name: "Tapiwa Gumbo", avatar_url: null },
   { id: "00000000-0000-0000-0000-000000000005", full_name: "Nyasha Chikwanha", avatar_url: null },
   { id: "00000000-0000-0000-0000-000000000006", full_name: "Blessing Ncube", avatar_url: null },
+];
+
+// Console "Users" tool listing.
+export const MOCK_USERS_LIST = [
+  { id: MOCK_USER_ID, full_name: MOCK_PROFILE.full_name, email: MOCK_PROFILE.email, phone: MOCK_PROFILE.phone, role: "super_admin" as const, status: "active" as const, created_at: "2026-01-15T09:00:00Z", last_login_at: "2026-08-08T08:30:00Z", balance: 325.5 },
+  { id: "00000000-0000-0000-0000-000000000008", full_name: "Munyaradzi Griezmann", email: "munyah777@gmail.com", phone: null, role: "admin" as const, status: "active" as const, created_at: "2026-08-08T09:00:00Z", last_login_at: "2026-08-08T09:00:00Z", balance: 0 },
+  { id: MOCK_OTHER_USER_ID, full_name: "Rutendo Chuma", email: "rutendo@example.com", phone: "+263771234567", role: "user" as const, status: "active" as const, created_at: "2026-03-02T10:00:00Z", last_login_at: "2026-08-07T19:12:00Z", balance: 84.2 },
+  { id: "00000000-0000-0000-0000-000000000003", full_name: "Kudakwashe Sibanda", email: "kuda@example.com", phone: "+263772345678", role: "user" as const, status: "active" as const, created_at: "2026-02-18T10:00:00Z", last_login_at: "2026-08-08T06:05:00Z", balance: 12.75 },
+  { id: "00000000-0000-0000-0000-000000000004", full_name: "Tapiwa Gumbo", email: "tapiwa@example.com", phone: "+263773456789", role: "user" as const, status: "suspended" as const, created_at: "2026-04-11T10:00:00Z", last_login_at: "2026-08-02T14:22:00Z", balance: 200 },
+  { id: "00000000-0000-0000-0000-000000000005", full_name: "Nyasha Chikwanha", email: "nyasha@example.com", phone: "+263774567890", role: "user" as const, status: "active" as const, created_at: "2026-05-06T10:00:00Z", last_login_at: "2026-08-01T11:05:00Z", balance: 30.1 },
+  { id: "00000000-0000-0000-0000-000000000006", full_name: "Blessing Ncube", email: "blessing@example.com", phone: "+263775678901", role: "admin" as const, status: "active" as const, created_at: "2026-01-20T10:00:00Z", last_login_at: "2026-08-08T07:00:00Z", balance: 0 },
+  { id: "00000000-0000-0000-0000-000000000007", full_name: "John Dziva", email: "john@example.com", phone: "+263776789012", role: "user" as const, status: "banned" as const, created_at: "2026-08-03T07:20:00Z", last_login_at: null, balance: 0 },
 ];

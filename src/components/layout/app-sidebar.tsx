@@ -15,8 +15,6 @@ import {
   Users,
   MessageCircle,
   ShieldCheck,
-  ShieldAlert,
-  Crown,
   LogOut,
 } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
@@ -45,7 +43,6 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { profile, wallet, signOut } = useSession();
   const isAdmin = profile?.role === "admin" || profile?.role === "super_admin";
-  const isSuperAdmin = profile?.role === "super_admin";
 
   return (
     <aside className="sticky top-0 hidden h-svh w-64 shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
@@ -86,42 +83,11 @@ export function AppSidebar() {
             </div>
             <Link
               href="/admin"
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                pathname === "/admin"
-                  ? "bg-primary/15 text-primary"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-              )}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
             >
               <ShieldCheck className="size-4.5" />
-              Admin Dashboard
+              Admin Console
             </Link>
-            <Link
-              href="/admin/fund-violations"
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                pathname === "/admin/fund-violations"
-                  ? "bg-primary/15 text-primary"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-              )}
-            >
-              <ShieldAlert className="size-4.5" />
-              Fund Violations
-            </Link>
-            {isSuperAdmin && (
-              <Link
-                href="/admin/super"
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  pathname === "/admin/super"
-                    ? "bg-primary/15 text-primary"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                )}
-              >
-                <Crown className="size-4.5" />
-                Super Admin
-              </Link>
-            )}
           </>
         )}
       </nav>

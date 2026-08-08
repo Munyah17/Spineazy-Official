@@ -11,6 +11,7 @@ import {
   Gift,
   HeartHandshake,
   LogOut,
+  Crown,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +77,8 @@ export default function AccountPage() {
     );
   }
 
+  const isAdmin = profile.role === "admin" || profile.role === "super_admin";
+
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6 px-3 py-4 lg:px-0 lg:py-6">
       <div className="flex items-center gap-4">
@@ -113,6 +116,17 @@ export default function AccountPage() {
       <Button asChild size="lg">
         <Link href="/wallet/deposit">Deposit</Link>
       </Button>
+
+      {isAdmin && (
+        <Link
+          href="/admin"
+          className="flex items-center gap-3 rounded-2xl bg-primary/10 px-4 py-3.5 text-sm font-semibold text-primary ring-1 ring-primary/30 transition-colors hover:bg-primary/15"
+        >
+          <Crown className="size-4.5" />
+          <span className="flex-1">Open Admin Console</span>
+          <ChevronRight className="size-4" />
+        </Link>
+      )}
 
       <nav className="overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/10">
         {MENU.map((item, i) => (

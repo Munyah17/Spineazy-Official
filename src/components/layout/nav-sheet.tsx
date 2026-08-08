@@ -10,8 +10,6 @@ import {
   Gift,
   Trophy,
   ShieldCheck,
-  ShieldAlert,
-  Crown,
   LogOut,
   LogIn,
   UserPlus,
@@ -35,7 +33,6 @@ export function NavSheet() {
   const [open, setOpen] = useState(false);
   const { profile, signOut } = useSession();
   const isAdmin = profile?.role === "admin" || profile?.role === "super_admin";
-  const isSuperAdmin = profile?.role === "super_admin";
 
   const links = [
     { href: "/", label: "Home", icon: Home },
@@ -54,13 +51,7 @@ export function NavSheet() {
           { href: "/affiliates", label: "Affiliates", icon: Users },
         ]
       : []),
-    ...(isAdmin
-      ? [
-          { href: "/admin", label: "Admin Dashboard", icon: ShieldCheck },
-          { href: "/admin/fund-violations", label: "Fund Violations", icon: ShieldAlert },
-        ]
-      : []),
-    ...(isSuperAdmin ? [{ href: "/admin/super", label: "Super Admin", icon: Crown }] : []),
+    ...(isAdmin ? [{ href: "/admin", label: "Admin Console", icon: ShieldCheck }] : []),
   ];
 
   return (

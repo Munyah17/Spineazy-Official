@@ -1657,6 +1657,24 @@ export type Database = {
           created_at: string
         }[]
       }
+      fn_get_users: {
+        Args: { p_search?: string; p_limit?: number }
+        Returns: {
+          id: string
+          full_name: string
+          email: string
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          status: Database["public"]["Enums"]["account_status"]
+          created_at: string
+          last_login_at: string | null
+          balance: number
+        }[]
+      }
+      fn_set_user_status: {
+        Args: { p_user_id: string; p_status: Database["public"]["Enums"]["account_status"] }
+        Returns: undefined
+      }
       fn_get_or_create_thread: { Args: { p_other_user_id: string }; Returns: string }
       fn_send_chat_message: { Args: { p_thread_id: string; p_body: string }; Returns: string }
       fn_send_red_packet: {

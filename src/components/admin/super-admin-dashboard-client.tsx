@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Users, Shield, DollarSign, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/stat-card";
 import { DepositsWithdrawalsChart, TopGamesChart } from "@/components/admin/super-admin-charts";
 import { createClient } from "@/lib/supabase/client";
@@ -50,12 +49,7 @@ export function SuperAdminDashboardClient() {
   }, [supabase]);
 
   return (
-    <div className="flex flex-col gap-6 px-3 py-4 lg:px-6 lg:py-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">Super Admin Dashboard</h1>
-        <Badge variant="secondary">This Month</Badge>
-      </div>
-
+    <div className="flex flex-col gap-6 px-4 py-5 lg:px-6 lg:py-6">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard icon={Users} label="Total Platform Users" value={stats ? String(stats.total_users) : "…"} />
         <StatCard icon={Shield} label="Total Operators" value={stats ? String(stats.total_operators) : "…"} />
