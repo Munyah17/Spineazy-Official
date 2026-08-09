@@ -10,8 +10,6 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { useMockStore } from "@/lib/mock/store";
 
 export default function SignInPage() {
   return (
@@ -26,7 +24,6 @@ function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/";
-  const setMockSignedIn = useMockStore((s) => s.setSignedIn);
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -35,16 +32,6 @@ function SignInForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    if (USE_MOCK_DATA) {
-      // MOCK: remove this branch once real Supabase auth is live.
-      setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      setMockSignedIn(true);
-      setLoading(false);
-      router.push(next);
-      return;
-    }
 
     setLoading(true);
 

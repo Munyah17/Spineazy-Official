@@ -5,8 +5,6 @@ import { ShieldAlert } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { useMockStore } from "@/lib/mock/store";
 import { formatMoney } from "@/lib/format";
 
 type Violation = {
@@ -22,24 +20,14 @@ type Violation = {
 
 export function FundViolationsClient() {
   const supabase = createClient();
-  // MOCK: remove this + the USE_MOCK_DATA branch below once real RPC calls are live.
-  const mockViolations = useMockStore((s) => s.fundViolations);
   const [violations, setViolations] = useState<Violation[] | null>(null);
 
   useEffect(() => {
-    if (USE_MOCK_DATA) {
-      (async () => {
-        await Promise.resolve();
-        setViolations(mockViolations);
-      })();
-      return;
-    }
-
     (async () => {
       const { data } = await supabase.rpc("fn_get_admin_fund_violations", { p_limit: 50 });
       setViolations((data as unknown as Violation[]) ?? []);
     })();
-  }, [supabase, mockViolations]);
+  }, [supabase]);
 
   return (
     <div className="flex flex-col gap-5 px-4 py-5 lg:px-6 lg:py-6">

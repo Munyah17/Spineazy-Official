@@ -10,8 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card } from "@/components/ui/card";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { useMockStore } from "@/lib/mock/store";
 import { cn } from "@/lib/utils";
 
 const METHODS = [
@@ -26,7 +24,6 @@ const PRESETS = [10, 20, 50, 100, 200];
 
 export default function DepositPage() {
   const router = useRouter();
-  const mockDeposit = useMockStore((s) => s.deposit);
   const [method, setMethod] = useState<(typeof METHODS)[number]["value"]>("ecocash");
   const [amount, setAmount] = useState("");
   const [phone, setPhone] = useState("");
@@ -37,17 +34,6 @@ export default function DepositPage() {
     const numAmount = Number(amount);
     if (!numAmount || numAmount <= 0) {
       toast.error("Enter a valid amount");
-      return;
-    }
-
-    if (USE_MOCK_DATA) {
-      // MOCK: remove this branch once real payment providers are live.
-      setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 700));
-      mockDeposit(numAmount, `${METHODS.find((m) => m.value === method)?.label} deposit`);
-      setLoading(false);
-      toast.success("Deposit received!");
-      router.push("/wallet");
       return;
     }
 

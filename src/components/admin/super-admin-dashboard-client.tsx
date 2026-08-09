@@ -6,8 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/stat-card";
 import { DepositsWithdrawalsChart, TopGamesChart } from "@/components/admin/super-admin-charts";
 import { createClient } from "@/lib/supabase/client";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { MOCK_SUPER_ADMIN_STATS, MOCK_DEPOSITS_SERIES, MOCK_TOP_GAMES } from "@/lib/mock/data";
 import { formatMoney } from "@/lib/format";
 
 type SuperAdminStats = {
@@ -25,17 +23,6 @@ export function SuperAdminDashboardClient() {
   const [topGames, setTopGames] = useState<{ title: string; turnover: number }[]>([]);
 
   useEffect(() => {
-    if (USE_MOCK_DATA) {
-      // MOCK: remove this branch once real RPC calls are live.
-      (async () => {
-        await Promise.resolve();
-        setStats(MOCK_SUPER_ADMIN_STATS);
-        setSeries(MOCK_DEPOSITS_SERIES);
-        setTopGames(MOCK_TOP_GAMES);
-      })();
-      return;
-    }
-
     (async () => {
       const [{ data: statsData }, { data: seriesData }, { data: gamesData }] = await Promise.all([
         supabase.rpc("fn_get_super_admin_stats"),

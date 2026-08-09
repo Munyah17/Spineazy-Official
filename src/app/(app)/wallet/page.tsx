@@ -10,8 +10,6 @@ import { StatCard } from "@/components/stat-card";
 import { SectionHeader } from "@/components/section-header";
 import { createClient } from "@/lib/supabase/client";
 import { useSession } from "@/lib/auth/session-provider";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { useMockStore } from "@/lib/mock/store";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
@@ -41,27 +39,11 @@ export default function WalletPage() {
   const router = useRouter();
   const supabase = createClient();
   const { profile, wallet } = useSession();
-  // MOCK: remove this + the USE_MOCK_DATA branches below once real queries are live.
-  const mockTransactions = useMockStore((s) => s.transactions);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [totalDeposits, setTotalDeposits] = useState(0);
   const [totalWithdrawals, setTotalWithdrawals] = useState(0);
 
   useEffect(() => {
-    if (USE_MOCK_DATA) {
-      (async () => {
-        await Promise.resolve();
-        setTransactions(mockTransactions.slice(0, 8));
-        setTotalDeposits(
-          mockTransactions.filter((t) => t.type === "deposit").reduce((sum, t) => sum + Number(t.amount), 0)
-        );
-        setTotalWithdrawals(
-          mockTransactions.filter((t) => t.type === "withdrawal").reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0)
-        );
-      })();
-      return;
-    }
-
     if (!profile) {
       router.push("/sign-in?next=/wallet");
       return;
@@ -82,8 +64,7 @@ export default function WalletPage() {
       setTotalWithdrawals((withdrawals ?? []).reduce((sum, w) => sum + Number(w.amount), 0));
       setTransactions(txs ?? []);
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile, mockTransactions]);
+  }, [profile, supabase, router]);
 
   return (
     <div className="flex flex-col gap-6 px-3 py-4 lg:px-6 lg:py-6">

@@ -6,8 +6,6 @@ import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { useMockStore } from "@/lib/mock/store";
 import { formatMoney } from "@/lib/format";
 
 type PendingWithdrawal = {
@@ -21,41 +19,20 @@ type PendingWithdrawal = {
 
 export function WithdrawalsClient() {
   const supabase = createClient();
-  // MOCK: remove this + the USE_MOCK_DATA branches below once real RPC calls are live.
-  const mockPending = useMockStore((s) => s.pendingWithdrawals);
-  const mockApprove = useMockStore((s) => s.approveWithdrawal);
-  const mockReject = useMockStore((s) => s.rejectWithdrawal);
   const [pending, setPending] = useState<PendingWithdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (USE_MOCK_DATA) {
-      (async () => {
-        await Promise.resolve();
-        setPending(mockPending);
-        setLoading(false);
-      })();
-      return;
-    }
-
     (async () => {
       const { data } = await supabase.rpc("fn_get_pending_withdrawals", { p_limit: 50 });
       setPending((data as unknown as PendingWithdrawal[]) ?? []);
       setLoading(false);
     })();
-  }, [supabase, mockPending]);
+  }, [supabase]);
 
   async function approve(id: string) {
     setBusyId(id);
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      mockApprove(id);
-      setBusyId(null);
-      toast.success("Withdrawal approved");
-      return;
-    }
-
     const { error } = await supabase.rpc("fn_approve_withdrawal", { p_withdrawal_id: id });
     setBusyId(null);
     if (error) {
@@ -68,14 +45,6 @@ export function WithdrawalsClient() {
 
   async function reject(id: string) {
     setBusyId(id);
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      mockReject(id);
-      setBusyId(null);
-      toast.success("Withdrawal rejected");
-      return;
-    }
-
     const { error } = await supabase.rpc("fn_reject_withdrawal", { p_withdrawal_id: id, p_reason: "Rejected by admin" });
     setBusyId(null);
     if (error) {

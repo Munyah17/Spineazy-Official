@@ -6,8 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { MOCK_BET_HISTORY } from "@/lib/mock/data";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -39,16 +37,6 @@ export default function MyBetsPage() {
 
   useEffect(() => {
     let cancelled = false;
-
-    if (USE_MOCK_DATA) {
-      // MOCK: remove this branch once real bets/casino_demo_crash_rounds queries are live.
-      (async () => {
-        await Promise.resolve();
-        setEntries(MOCK_BET_HISTORY);
-        setLoading(false);
-      })();
-      return;
-    }
 
     (async () => {
       const {

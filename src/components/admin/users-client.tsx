@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, ShieldBan, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useSession } from "@/lib/auth/session-provider";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { MOCK_USERS_LIST } from "@/lib/mock/data";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -36,14 +34,11 @@ export function UsersClient() {
   const supabase = createClient();
   const { profile } = useSession();
   const [query, setQuery] = useState("");
-  // MOCK: remove the USE_MOCK_DATA ? ... initializer once fn_get_users is live.
-  const [users, setUsers] = useState<UserRow[]>(USE_MOCK_DATA ? (MOCK_USERS_LIST as UserRow[]) : []);
-  const [loading, setLoading] = useState(!USE_MOCK_DATA);
+  const [users, setUsers] = useState<UserRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (USE_MOCK_DATA) return;
-
     const timeout = setTimeout(async () => {
       setLoading(true);
       const { data } = await supabase.rpc("fn_get_users", { p_search: query || undefined, p_limit: 100 });
@@ -53,25 +48,9 @@ export function UsersClient() {
     return () => clearTimeout(timeout);
   }, [supabase, query]);
 
-  const filtered = useMemo(() => {
-    if (!USE_MOCK_DATA || !query.trim()) return users;
-    const q = query.trim().toLowerCase();
-    return users.filter(
-      (u) => u.full_name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.phone?.includes(q)
-    );
-  }, [users, query]);
-
   async function toggleStatus(user: UserRow) {
     const nextStatus = user.status === "active" ? "suspended" : "active";
     setBusyId(user.id);
-
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, status: nextStatus } : u)));
-      setBusyId(null);
-      toast.success(nextStatus === "active" ? "User reactivated" : "User suspended");
-      return;
-    }
 
     const { error } = await supabase.rpc("fn_set_user_status", { p_user_id: user.id, p_status: nextStatus });
     setBusyId(null);
@@ -111,7 +90,7 @@ export function UsersClient() {
               <span>Status</span>
               <span className="text-right">Action</span>
             </div>
-            {filtered.map((u) => (
+            {users.map((u) => (
               <div key={u.id} className="grid grid-cols-2 items-center gap-3 px-4 py-3 sm:grid-cols-[1fr_auto_auto_auto_auto]">
                 <div className="col-span-2 min-w-0 sm:col-span-1">
                   <p className="truncate text-sm font-semibold text-foreground">{u.full_name}</p>
@@ -136,7 +115,7 @@ export function UsersClient() {
                 </div>
               </div>
             ))}
-            {filtered.length === 0 && (
+            {users.length === 0 && (
               <p className="px-4 py-8 text-center text-sm text-muted-foreground">No players match this search.</p>
             )}
           </CardContent>

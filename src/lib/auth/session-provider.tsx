@@ -3,8 +3,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { useMockStore } from "@/lib/mock/store";
 import type { Database } from "@/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -17,7 +15,6 @@ type SessionContextValue = {
   loading: boolean;
   refreshWallet: () => Promise<void>;
   signOut: () => Promise<void>;
-  mockSignIn: () => void;
 };
 
 const SessionContext = createContext<SessionContextValue>({
@@ -27,7 +24,6 @@ const SessionContext = createContext<SessionContextValue>({
   loading: true,
   refreshWallet: async () => {},
   signOut: async () => {},
-  mockSignIn: () => {},
 });
 
 export function SessionProvider({
@@ -44,22 +40,14 @@ export function SessionProvider({
   const [profile, setProfile] = useState<Profile | null>(initialProfile);
   const [wallet, setWallet] = useState<Wallet | null>(initialWallet);
   const [loading, setLoading] = useState(false);
-  // MOCK: remove this + the USE_MOCK_DATA branches below once real auth/wallet queries are live.
-  const mockWallet = useMockStore((s) => s.wallet);
-  const mockSignedIn = useMockStore((s) => s.signedIn);
-  const setMockSignedIn = useMockStore((s) => s.setSignedIn);
-  const effectiveProfile = USE_MOCK_DATA ? (mockSignedIn ? initialProfile : null) : profile;
-  const effectiveWallet = USE_MOCK_DATA ? (mockSignedIn ? mockWallet : null) : wallet;
 
   const refreshWallet = async () => {
-    if (USE_MOCK_DATA) return; // mock store updates reactively, nothing to refresh
     if (!profile) return;
     const { data } = await supabase.from("wallets").select("*").eq("user_id", profile.id).single();
     if (data) setWallet(data);
   };
 
   useEffect(() => {
-    if (USE_MOCK_DATA) return;
     if (!profile) return;
 
     const channel = supabase
@@ -78,7 +66,6 @@ export function SessionProvider({
   }, [profile, supabase]);
 
   useEffect(() => {
-    if (USE_MOCK_DATA) return;
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
@@ -92,11 +79,6 @@ export function SessionProvider({
   }, [supabase, router]);
 
   const signOut = async () => {
-    if (USE_MOCK_DATA) {
-      setMockSignedIn(false);
-      router.push("/");
-      return;
-    }
     setLoading(true);
     await supabase.auth.signOut();
     setLoading(false);
@@ -104,21 +86,15 @@ export function SessionProvider({
     router.refresh();
   };
 
-  const mockSignIn = () => {
-    if (!USE_MOCK_DATA) return;
-    setMockSignedIn(true);
-  };
-
   return (
     <SessionContext.Provider
       value={{
-        userId: effectiveProfile?.id ?? null,
-        profile: effectiveProfile,
-        wallet: effectiveWallet,
+        userId: profile?.id ?? null,
+        profile,
+        wallet,
         loading,
         refreshWallet,
         signOut,
-        mockSignIn,
       }}
     >
       {children}

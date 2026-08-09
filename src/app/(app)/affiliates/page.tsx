@@ -10,8 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/stat-card";
 import { createClient } from "@/lib/supabase/client";
 import { useSession } from "@/lib/auth/session-provider";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { MOCK_AFFILIATE_STATS, MOCK_REFERRALS } from "@/lib/mock/data";
 import { formatMoney } from "@/lib/format";
 
 type AffiliateStats = {
@@ -39,16 +37,6 @@ export default function AffiliatesPage() {
 
   useEffect(() => {
     if (!profile) return;
-
-    if (USE_MOCK_DATA) {
-      // MOCK: remove this branch once real fn_get_affiliate_stats/fn_get_recent_referrals calls are live.
-      (async () => {
-        await Promise.resolve();
-        setStats(MOCK_AFFILIATE_STATS);
-        setReferrals(MOCK_REFERRALS);
-      })();
-      return;
-    }
 
     (async () => {
       const [{ data: statsData }, { data: referralsData }] = await Promise.all([

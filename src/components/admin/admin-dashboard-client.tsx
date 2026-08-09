@@ -7,9 +7,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/stat-card";
 import { createClient } from "@/lib/supabase/client";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { MOCK_ADMIN_STATS, MOCK_ADMIN_ACTIVITY } from "@/lib/mock/data";
-import { useMockStore } from "@/lib/mock/store";
 import { formatMoney } from "@/lib/format";
 
 type AdminStats = {
@@ -30,21 +27,10 @@ const ACTIVITY_LABEL: Record<string, string> = {
 
 export function AdminDashboardClient() {
   const supabase = createClient();
-  // MOCK: remove this + the USE_MOCK_DATA branch below once real RPC calls are live.
-  const mockPendingCount = useMockStore((s) => s.pendingWithdrawals.length);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [activity, setActivity] = useState<Activity[]>([]);
 
   useEffect(() => {
-    if (USE_MOCK_DATA) {
-      (async () => {
-        await Promise.resolve();
-        setStats({ ...MOCK_ADMIN_STATS, pending_withdrawals: mockPendingCount });
-        setActivity(MOCK_ADMIN_ACTIVITY);
-      })();
-      return;
-    }
-
     (async () => {
       const [{ data: statsData }, { data: activityData }] = await Promise.all([
         supabase.rpc("fn_get_admin_stats"),
@@ -53,7 +39,7 @@ export function AdminDashboardClient() {
       if (statsData) setStats(statsData as unknown as AdminStats);
       if (activityData) setActivity(activityData as Activity[]);
     })();
-  }, [supabase, mockPendingCount]);
+  }, [supabase]);
 
   return (
     <div className="flex flex-col gap-6 px-4 py-5 lg:px-6 lg:py-6">

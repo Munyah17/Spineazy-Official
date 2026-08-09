@@ -12,8 +12,6 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
 import { useSession } from "@/lib/auth/session-provider";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { MOCK_THREAD_ID, MOCK_OTHER_USER_ID, MOCK_OTHER_USER_NAME, MOCK_USER_DIRECTORY } from "@/lib/mock/data";
 import { initials } from "@/lib/format";
 
 type ThreadRow = {
@@ -38,24 +36,6 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!profile) return;
-
-    if (USE_MOCK_DATA) {
-      // MOCK: remove this branch once real chat_threads/profiles queries are live.
-      (async () => {
-        await Promise.resolve();
-        setThreads([
-          {
-            id: MOCK_THREAD_ID,
-            user_a_id: profile.id,
-            user_b_id: MOCK_OTHER_USER_ID,
-            last_message_at: new Date().toISOString(),
-            otherName: MOCK_OTHER_USER_NAME,
-          },
-        ]);
-        setLoading(false);
-      })();
-      return;
-    }
 
     (async () => {
       const { data: rows } = await supabase
@@ -93,14 +73,6 @@ export default function ChatPage() {
 
       setSearching(true);
 
-      if (USE_MOCK_DATA) {
-        // MOCK: remove this branch once fn_search_users is live.
-        const q = query.trim().toLowerCase();
-        setResults(MOCK_USER_DIRECTORY.filter((u) => u.full_name.toLowerCase().includes(q)));
-        setSearching(false);
-        return;
-      }
-
       const { data } = await supabase.rpc("fn_search_users", { p_query: query.trim(), p_limit: 8 });
       setResults((data as unknown as UserResult[]) ?? []);
       setSearching(false);
@@ -111,14 +83,6 @@ export default function ChatPage() {
 
   async function startChat(otherUserId: string) {
     setStarting(otherUserId);
-
-    if (USE_MOCK_DATA) {
-      // MOCK: remove this branch once real fn_get_or_create_thread calls are live.
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      setStarting(null);
-      router.push(`/chat/${MOCK_THREAD_ID}`);
-      return;
-    }
 
     const { data: threadId, error } = await supabase.rpc("fn_get_or_create_thread", {
       p_other_user_id: otherUserId,

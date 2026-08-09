@@ -18,7 +18,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useSession } from "@/lib/auth/session-provider";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
 import { formatMoney, initials } from "@/lib/format";
 
 const MENU = [
@@ -36,15 +35,6 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (!profile) return;
-
-    if (USE_MOCK_DATA) {
-      // MOCK: remove this branch once real bets/casino_demo_crash_rounds queries are live.
-      (async () => {
-        await Promise.resolve();
-        setWageredThisMonth(58);
-      })();
-      return;
-    }
 
     const monthStart = new Date();
     monthStart.setDate(1);

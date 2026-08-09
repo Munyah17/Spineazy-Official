@@ -5,10 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { GameFrame } from "@/components/casino/game-frame";
 import { DiceGame } from "@/components/casino/dice-game";
 import { WalletBalancePill } from "@/components/casino/wallet-balance-pill";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { MOCK_GAMES } from "@/lib/mock/data";
 import { cn } from "@/lib/utils";
-import type { CasinoGame } from "@/lib/data/casino-games";
 
 // In-house originals render their own full UI instead of the aggregator
 // iframe host (GameFrame). Add new original game_keys here as they ship.
@@ -17,26 +14,18 @@ const ORIGINALS = new Set(["dice-roll"]);
 export default async function GamePlayerPage({ params }: { params: Promise<{ gameKey: string }> }) {
   const { gameKey } = await params;
 
-  let game: CasinoGame | null | undefined;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect(`/sign-in?next=/casino/${gameKey}`);
 
-  if (USE_MOCK_DATA) {
-    // MOCK: remove this branch once real auth + casino_games queries are live.
-    game = MOCK_GAMES.find((g) => g.game_key === gameKey) ?? null;
-  } else {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) redirect(`/sign-in?next=/casino/${gameKey}`);
-
-    const { data: gameData } = await supabase
-      .from("casino_games")
-      .select("*")
-      .eq("game_key", gameKey)
-      .eq("active", true)
-      .single();
-    game = gameData;
-  }
+  const { data: game } = await supabase
+    .from("casino_games")
+    .select("*")
+    .eq("game_key", gameKey)
+    .eq("active", true)
+    .single();
 
   if (!game) notFound();
 

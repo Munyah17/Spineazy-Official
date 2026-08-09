@@ -17,9 +17,6 @@ import {
 } from "@/components/ui/dialog";
 import { createClient } from "@/lib/supabase/client";
 import { useSession } from "@/lib/auth/session-provider";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { useMockStore, type MockChatMessage } from "@/lib/mock/store";
-import { MOCK_OTHER_USER_ID, MOCK_OTHER_USER_NAME } from "@/lib/mock/data";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -34,38 +31,10 @@ type ChatMessage = {
   vouchers: { amount: number; code: string; status: string; recipient_id: string } | null;
 };
 
-// MOCK: remove once real chat_messages queries replace the mock store.
-function normalizeMockMessages(mockMessages: MockChatMessage[], myId: string): ChatMessage[] {
-  return mockMessages.map((m) => ({
-    id: m.id,
-    sender_id: m.sender_id,
-    kind: m.kind,
-    body: m.body,
-    voucher_id: m.kind === "voucher" ? m.id : null,
-    created_at: m.created_at,
-    red_packets: m.kind === "red_packet" ? { amount: m.redPacketAmount ?? 0 } : null,
-    vouchers:
-      m.kind === "voucher"
-        ? {
-            amount: m.voucherAmount ?? 0,
-            code: m.voucherCode ?? "",
-            status: m.voucherStatus ?? "issued",
-            recipient_id: m.sender_id === myId ? MOCK_OTHER_USER_ID : myId,
-          }
-        : null,
-  }));
-}
-
 export default function ChatThreadPage({ params }: { params: Promise<{ threadId: string }> }) {
   const { threadId } = use(params);
   const { profile, wallet, refreshWallet } = useSession();
   const supabase = createClient();
-  // MOCK: remove this + the USE_MOCK_DATA branches below once real chat RPCs are live.
-  const mockMessages = useMockStore((s) => s.chatMessages);
-  const mockSendChatMessage = useMockStore((s) => s.sendChatMessage);
-  const mockSendRedPacket = useMockStore((s) => s.sendRedPacket);
-  const mockIssueVoucher = useMockStore((s) => s.issueVoucher);
-  const mockRedeemVoucher = useMockStore((s) => s.redeemVoucher);
 
   const [otherName, setOtherName] = useState("Player");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -88,15 +57,6 @@ export default function ChatThreadPage({ params }: { params: Promise<{ threadId:
   useEffect(() => {
     if (!profile) return;
 
-    if (USE_MOCK_DATA) {
-      (async () => {
-        await Promise.resolve();
-        setOtherName(MOCK_OTHER_USER_NAME);
-        setLoading(false);
-      })();
-      return;
-    }
-
     (async () => {
       const { data: thread } = await supabase
         .from("chat_threads")
@@ -116,19 +76,10 @@ export default function ChatThreadPage({ params }: { params: Promise<{ threadId:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile, threadId]);
 
-  const displayMessages = USE_MOCK_DATA && profile ? normalizeMockMessages(mockMessages, profile.id) : messages;
-
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (!body.trim()) return;
     setSending(true);
-
-    if (USE_MOCK_DATA) {
-      mockSendChatMessage(body);
-      setSending(false);
-      setBody("");
-      return;
-    }
 
     const { error } = await supabase.rpc("fn_send_chat_message", { p_thread_id: threadId, p_body: body });
     setSending(false);
@@ -148,28 +99,6 @@ export default function ChatThreadPage({ params }: { params: Promise<{ threadId:
     }
 
     setGiftBusy(true);
-
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      const result = giftDialog === "red_packet" ? mockSendRedPacket(amount) : mockIssueVoucher(amount);
-      setGiftBusy(false);
-
-      if (!result.ok) {
-        if (result.error === "insufficient_profit_balance") {
-          toast.error("You can't gift deposited funds", {
-            description: "Only your withdrawable winnings can be sent as a Red Packet. Send a voucher instead so they can place bets with it.",
-          });
-        } else {
-          toast.error("Not enough deposited balance for a voucher of that size");
-        }
-        return;
-      }
-
-      toast.success(giftDialog === "red_packet" ? "Red Packet sent!" : "Voucher sent!");
-      setGiftDialog(null);
-      setGiftAmount("");
-      return;
-    }
 
     const { data: thread } = await supabase.from("chat_threads").select("user_a_id, user_b_id").eq("id", threadId).single();
     const recipientId = thread ? (thread.user_a_id === profile!.id ? thread.user_b_id : thread.user_a_id) : null;
@@ -207,12 +136,6 @@ export default function ChatThreadPage({ params }: { params: Promise<{ threadId:
   }
 
   async function handleRedeem(voucherId: string) {
-    if (USE_MOCK_DATA) {
-      mockRedeemVoucher(voucherId);
-      toast.success("Voucher redeemed — added to your bet-only balance");
-      return;
-    }
-
     const { error } = await supabase.rpc("fn_redeem_voucher", { p_voucher_id: voucherId });
     if (error) {
       toast.error("Couldn't redeem voucher", { description: error.message });
@@ -239,10 +162,10 @@ export default function ChatThreadPage({ params }: { params: Promise<{ threadId:
       <div className="flex flex-1 flex-col justify-end gap-2 overflow-y-auto px-3 py-4">
         {loading ? (
           <p className="text-center text-sm text-muted-foreground">Loading…</p>
-        ) : displayMessages.length === 0 ? (
+        ) : messages.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground">Say hello 👋</p>
         ) : (
-          displayMessages.map((m) => {
+          messages.map((m) => {
             const mine = m.sender_id === profile.id;
             if (m.kind === "text") {
               return (

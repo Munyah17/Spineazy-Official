@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Clock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { MockGameDemo } from "@/components/casino/mock-game-demo";
 
 export function GameFrame({ gameKey, title }: { gameKey: string; title: string }) {
   const [state, setState] = useState<
@@ -13,7 +11,6 @@ export function GameFrame({ gameKey, title }: { gameKey: string; title: string }
   >({ status: "loading" });
 
   useEffect(() => {
-    if (USE_MOCK_DATA) return; // MOCK: remove with src/lib/mock/ once the aggregator is live
     let cancelled = false;
     fetch("/api/casino/launch", {
       method: "POST",
@@ -42,11 +39,6 @@ export function GameFrame({ gameKey, title }: { gameKey: string; title: string }
       cancelled = true;
     };
   }, [gameKey]);
-
-  if (USE_MOCK_DATA) {
-    // MOCK: remove with src/lib/mock/ once the aggregator is live
-    return <MockGameDemo gameKey={gameKey} title={title} />;
-  }
 
   if (state.status === "ready") {
     return (

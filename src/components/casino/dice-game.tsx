@@ -6,21 +6,28 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { USE_MOCK_DATA } from "@/lib/mock/flag";
-import { useMockDiceStore, type DiceRoundRecord } from "@/lib/mock/dice-store";
 import { DICE_MIN_TARGET, DICE_MAX_TARGET, diceMultiplier, diceWinChance, type DiceDirection } from "@/lib/games/provably-fair";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-// Fairness (server seed commit/reveal, HMAC verification) is real and
-// enforced server-side -- see src/lib/games/provably-fair.ts and
-// src/app/api/casino/demo/* -- but that's internal integrity plumbing, not
-// something to surface to players. Keep this screen to the game itself.
+type HistoryEntry = {
+  id: string;
+  roll: number;
+  target: number;
+  direction: DiceDirection;
+  betAmount: number;
+  payout: number;
+  won: boolean;
+};
+
+// Fairness (server seed commit/reveal, HMAC verification) is enforced
+// server-side in src/app/api/casino/demo/* -- see src/lib/games/provably-fair.ts.
+// This screen only plays the game; it doesn't surface that plumbing to players.
 export function DiceGame() {
-  const mock = useMockDiceStore();
   const [ready, setReady] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
   const [demoBalance, setDemoBalance] = useState(0);
-  const [history, setHistory] = useState<DiceRoundRecord[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   const [betAmount, setBetAmount] = useState("1");
   const [target, setTarget] = useState(50);
@@ -29,13 +36,26 @@ export function DiceGame() {
   const [lastRoll, setLastRoll] = useState<{ roll: number; won: boolean } | null>(null);
 
   useEffect(() => {
-    if (!USE_MOCK_DATA) return; // MOCK: remove once the UI calls /api/casino/demo/* directly.
+    let cancelled = false;
     (async () => {
-      await mock.init();
-      setDemoBalance(useMockDiceStore.getState().demoBalance);
-      setReady(true);
+      try {
+        const res = await fetch("/api/casino/demo/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ gameKey: "dice" }),
+        });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        if (cancelled) return;
+        setDemoBalance(data.demoBalance);
+        setReady(true);
+      } catch {
+        if (!cancelled) setUnavailable(true);
+      }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const winChance = useMemo(() => diceWinChance(target, direction), [target, direction]);
@@ -55,19 +75,38 @@ export function DiceGame() {
 
     setRolling(true);
     try {
-      if (USE_MOCK_DATA) {
-        const result = await mock.play(amount, target, direction);
-        const s = useMockDiceStore.getState();
-        setDemoBalance(s.demoBalance);
-        setHistory(s.history);
-        setLastRoll({ roll: result.roll, won: result.won });
-        if (result.won) toast.success(`You won ${formatMoney(result.payout)}!`);
-      }
+      const res = await fetch("/api/casino/demo/dice/bet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ betAmount: amount, target, direction }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Couldn't place that bet");
+
+      setDemoBalance(data.newBalance);
+      setLastRoll({ roll: data.roll, won: data.won });
+      setHistory((prev) =>
+        [
+          { id: `${Date.now()}`, roll: data.roll, target, direction, betAmount: amount, payout: data.payout, won: data.won },
+          ...prev,
+        ].slice(0, 10)
+      );
+      if (data.won) toast.success(`You won ${formatMoney(data.payout)}!`);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
       setRolling(false);
     }
+  }
+
+  if (unavailable) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+        <Dice5 className="size-8 text-muted-foreground" />
+        <p className="text-sm font-medium text-foreground">Sign in to play Roll the Dice</p>
+        <p className="text-xs text-muted-foreground">Practice mode needs an account to track your demo balance.</p>
+      </div>
+    );
   }
 
   if (!ready) {
@@ -214,7 +253,7 @@ export function DiceGame() {
       {history.length > 0 && (
         <Card>
           <CardContent className="flex flex-col gap-2 p-0 divide-y divide-border">
-            {history.slice(0, 10).map((h) => (
+            {history.map((h) => (
               <div key={h.id} className="flex items-center gap-3 px-4 py-2.5">
                 <span className={cn("text-sm font-bold", h.won ? "text-win" : "text-destructive")}>{h.roll.toFixed(2)}</span>
                 <span className="flex-1 text-xs text-muted-foreground">
