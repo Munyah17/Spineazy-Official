@@ -52,6 +52,18 @@ function SignUpForm() {
     }
 
     setLoading(true);
+
+    const { data: allowed } = await supabase.rpc("fn_check_rate_limit", {
+      p_key: `signup:${email.trim().toLowerCase()}`,
+      p_max_attempts: 5,
+      p_window_seconds: 3600,
+    });
+    if (allowed === false) {
+      setLoading(false);
+      toast.error("Too many attempts", { description: "Please wait a while and try again." });
+      return;
+    }
+
     const fullPhone = phone ? `+263${phone.replace(/^0+/, "")}` : null;
 
     let referredBy: string | null = null;

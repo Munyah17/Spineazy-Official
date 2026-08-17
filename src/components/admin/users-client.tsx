@@ -58,6 +58,12 @@ export function UsersClient() {
       toast.error("Couldn't update user", { description: error.message });
       return;
     }
+    await supabase.rpc("fn_log_admin_action", {
+      p_action: nextStatus === "active" ? "user_reactivated" : "user_suspended",
+      p_target_type: "user",
+      p_target_id: user.id,
+      p_meta: { email: user.email },
+    });
     setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, status: nextStatus } : u)));
     toast.success(nextStatus === "active" ? "User reactivated" : "User suspended");
   }

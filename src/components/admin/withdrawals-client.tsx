@@ -31,7 +31,7 @@ export function WithdrawalsClient() {
     })();
   }, [supabase]);
 
-  async function approve(id: string) {
+  async function approve(id: string, amount: number) {
     setBusyId(id);
     const { error } = await supabase.rpc("fn_approve_withdrawal", { p_withdrawal_id: id });
     setBusyId(null);
@@ -39,11 +39,17 @@ export function WithdrawalsClient() {
       toast.error("Couldn't approve withdrawal", { description: error.message });
       return;
     }
+    await supabase.rpc("fn_log_admin_action", {
+      p_action: "withdrawal_approved",
+      p_target_type: "withdrawal",
+      p_target_id: id,
+      p_meta: { amount },
+    });
     toast.success("Withdrawal approved");
     setPending((p) => p.filter((w) => w.id !== id));
   }
 
-  async function reject(id: string) {
+  async function reject(id: string, amount: number) {
     setBusyId(id);
     const { error } = await supabase.rpc("fn_reject_withdrawal", { p_withdrawal_id: id, p_reason: "Rejected by admin" });
     setBusyId(null);
@@ -51,6 +57,12 @@ export function WithdrawalsClient() {
       toast.error("Couldn't reject withdrawal", { description: error.message });
       return;
     }
+    await supabase.rpc("fn_log_admin_action", {
+      p_action: "withdrawal_rejected",
+      p_target_type: "withdrawal",
+      p_target_id: id,
+      p_meta: { amount, reason: "Rejected by admin" },
+    });
     toast.success("Withdrawal rejected");
     setPending((p) => p.filter((w) => w.id !== id));
   }
@@ -79,10 +91,10 @@ export function WithdrawalsClient() {
                 </div>
                 <div className="flex items-center gap-2 self-end sm:self-auto">
                   <span className="font-mono text-sm font-semibold text-foreground">{formatMoney(w.amount)}</span>
-                  <Button size="icon-sm" variant="ghost" disabled={busyId === w.id} onClick={() => approve(w.id)} className="text-win hover:text-win">
+                  <Button size="icon-sm" variant="ghost" disabled={busyId === w.id} onClick={() => approve(w.id, w.amount)} className="text-win hover:text-win">
                     <Check className="size-4" />
                   </Button>
-                  <Button size="icon-sm" variant="ghost" disabled={busyId === w.id} onClick={() => reject(w.id)} className="text-destructive hover:text-destructive">
+                  <Button size="icon-sm" variant="ghost" disabled={busyId === w.id} onClick={() => reject(w.id, w.amount)} className="text-destructive hover:text-destructive">
                     <X className="size-4" />
                   </Button>
                 </div>

@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { createClient } from "@/lib/supabase/client";
+import { useSession } from "@/lib/auth/session-provider";
 import { formatMoney } from "@/lib/format";
 
 const METHODS = [
@@ -32,6 +33,7 @@ const MIN_WITHDRAWAL = 5;
 export default function WithdrawPage() {
   const supabase = createClient();
   const router = useRouter();
+  const { profile } = useSession();
   const [profitBalance, setProfitBalance] = useState<number | null>(null);
   const [depositedBalance, setDepositedBalance] = useState<number | null>(null);
   const [method, setMethod] = useState<(typeof METHODS)[number]["value"]>("ecocash");
@@ -72,6 +74,17 @@ export default function WithdrawPage() {
     }
 
     setLoading(true);
+
+    const { data: withinRate } = await supabase.rpc("fn_check_rate_limit", {
+      p_key: `withdraw:${profile?.id ?? "anon"}`,
+      p_max_attempts: 5,
+      p_window_seconds: 600,
+    });
+    if (withinRate === false) {
+      setLoading(false);
+      toast.error("Too many withdrawal attempts", { description: "Please wait a few minutes and try again." });
+      return;
+    }
 
     const { data: allowed, error: guardError } = await supabase.rpc("fn_guard_withdrawal_request", {
       p_amount: numAmount,

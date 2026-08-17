@@ -54,7 +54,21 @@ export async function POST(req: NextRequest) {
   const newBalance = Math.round((session.demo_balance - betAmount + payout) * 100) / 100;
   const nextNonce = session.nonce + 1;
 
-  await admin.from("casino_demo_sessions").update({ demo_balance: newBalance, nonce: nextNonce }).eq("id", session.id);
+  // Conditional update keyed on the nonce we read: if a concurrent request
+  // already consumed this nonce, this affects 0 rows and we bail out instead
+  // of overwriting balance/nonce with a stale computation (read-then-write
+  // race). The client can retry, which re-fetches a fresh session/nonce.
+  const { data: updated } = await admin
+    .from("casino_demo_sessions")
+    .update({ demo_balance: newBalance, nonce: nextNonce })
+    .eq("id", session.id)
+    .eq("nonce", session.nonce)
+    .select("id")
+    .maybeSingle();
+
+  if (!updated) {
+    return NextResponse.json({ error: "Bet conflict, please try again" }, { status: 409 });
+  }
 
   await admin.from("casino_demo_dice_rounds").insert({
     session_id: session.id,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -6,18 +7,25 @@ export const dynamic = "force-dynamic";
 /**
  * SoftGamings seamless-wallet callback.
  *
- * STATUS: scaffold only -- SoftGamings' technical integration guide (exact
- * action names, payload field names, and the request-signing scheme) has
- * not been provided yet. DO NOT point SoftGamings at this URL in production
- * until:
- *   1. Signature verification below is replaced with their real scheme.
+ * STATUS: scaffold -- SoftGamings' technical integration guide (exact action
+ * names, payload field names, and header name/encoding for their signature)
+ * has not been provided yet. DO NOT point SoftGamings at this URL in
+ * production until:
+ *   1. The header name and signature encoding (hex vs base64) below are
+ *      confirmed against their real docs and SOFTGAMINGS_WEBHOOK_SECRET is
+ *      set to the shared secret they issue.
  *   2. The action/field names are confirmed against their docs.
- *   3. Idempotency is confirmed (aggregators retry on timeout -- reusing a
- *      transaction id must be a no-op, not a double debit/credit).
+ *
+ * Signature verification now does a real constant-time HMAC-SHA256 check
+ * (previously it only checked that a header was present), and every
+ * debit/credit/rollback is recorded in webhook_events keyed on
+ * (provider, transaction_id, action) so a retried callback is a no-op
+ * instead of double-processing.
  *
  * The wallet math itself reuses the same fn_wallet_debit / fn_wallet_credit
  * RPCs the sportsbook and deposit flows already use, so once the contract
- * above is confirmed, only the parsing in this file needs to change.
+ * above is confirmed, only the parsing/signature scheme in this file needs
+ * to change.
  */
 
 type CallbackAction = "balance" | "debit" | "credit" | "rollback";
@@ -33,10 +41,21 @@ interface SoftGamingsCallback {
 }
 
 function verifySignature(req: NextRequest, rawBody: string): boolean {
-  // TODO(softgamings-integration): replace with their real HMAC/signature
-  // scheme once documented -- this only checks a signature header is present.
+  const secret = process.env.SOFTGAMINGS_WEBHOOK_SECRET;
   const signature = req.headers.get("x-softgamings-signature");
-  return Boolean(process.env.SOFTGAMINGS_API_KEY) && Boolean(signature) && rawBody.length > 0;
+  if (!secret || !signature || rawBody.length === 0) return false;
+
+  const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+  let provided: Buffer;
+  let expectedBuf: Buffer;
+  try {
+    provided = Buffer.from(signature, "hex");
+    expectedBuf = Buffer.from(expected, "hex");
+  } catch {
+    return false;
+  }
+  if (provided.length !== expectedBuf.length) return false;
+  return crypto.timingSafeEqual(provided, expectedBuf);
 }
 
 export async function POST(req: NextRequest) {
@@ -58,10 +77,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unknown player" }, { status: 404 });
   }
 
-  switch (payload.action) {
-    case "balance": {
-      return NextResponse.json({ balance: wallet.balance, currency: payload.currency ?? "USD" });
+  if (payload.action === "balance") {
+    return NextResponse.json({ balance: wallet.balance, currency: payload.currency ?? "USD" });
+  }
+
+  // Idempotency: reserve (provider, transaction_id, action) before touching
+  // the wallet. A unique-constraint conflict means we've already processed
+  // this exact callback -- return success without reprocessing.
+  const { error: dedupeError } = await admin
+    .from("webhook_events")
+    .insert({ provider: "softgamings", transaction_id: payload.transactionId, action: payload.action });
+
+  if (dedupeError) {
+    if (dedupeError.code === "23505") {
+      return NextResponse.json({ status: "ok", note: "duplicate callback, already processed" });
     }
+    return NextResponse.json({ error: "Could not record callback" }, { status: 500 });
+  }
+
+  switch (payload.action) {
     case "debit": {
       const amount = Number(payload.amount ?? 0);
       if (amount > wallet.balance) {

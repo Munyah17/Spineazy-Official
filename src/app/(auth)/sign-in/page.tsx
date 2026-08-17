@@ -35,6 +35,17 @@ function SignInForm() {
 
     setLoading(true);
 
+    const { data: allowed } = await supabase.rpc("fn_check_rate_limit", {
+      p_key: `login:${identifier.trim().toLowerCase()}`,
+      p_max_attempts: 8,
+      p_window_seconds: 300,
+    });
+    if (allowed === false) {
+      setLoading(false);
+      toast.error("Too many attempts", { description: "Please wait a few minutes and try again." });
+      return;
+    }
+
     let email = identifier.trim();
     if (!email.includes("@")) {
       const digits = email.replace(/\D/g, "");

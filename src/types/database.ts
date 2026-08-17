@@ -1578,6 +1578,174 @@ export type Database = {
           },
         ]
       }
+      webhook_events: {
+        Row: {
+          provider: string
+          transaction_id: string
+          action: string
+          created_at: string
+        }
+        Insert: {
+          provider: string
+          transaction_id: string
+          action: string
+          created_at?: string
+        }
+        Update: {
+          provider?: string
+          transaction_id?: string
+          action?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      admin_audit_log: {
+        Row: {
+          id: number
+          admin_id: string
+          action: string
+          target_type: string
+          target_id: string | null
+          meta: Json
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          admin_id: string
+          action: string
+          target_type: string
+          target_id?: string | null
+          meta?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          admin_id?: string
+          action?: string
+          target_type?: string
+          target_id?: string | null
+          meta?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
+      responsible_gaming_limits: {
+        Row: {
+          user_id: string
+          daily_deposit_limit: number | null
+          weekly_deposit_limit: number | null
+          monthly_deposit_limit: number | null
+          self_exclude_until: string | null
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          daily_deposit_limit?: number | null
+          weekly_deposit_limit?: number | null
+          monthly_deposit_limit?: number | null
+          self_exclude_until?: string | null
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          daily_deposit_limit?: number | null
+          weekly_deposit_limit?: number | null
+          monthly_deposit_limit?: number | null
+          self_exclude_until?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      support_tickets: {
+        Row: {
+          id: string
+          user_id: string
+          subject: string
+          status: Database["public"]["Enums"]["support_ticket_status"]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          subject: string
+          status?: Database["public"]["Enums"]["support_ticket_status"]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          subject?: string
+          status?: Database["public"]["Enums"]["support_ticket_status"]
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      support_messages: {
+        Row: {
+          id: string
+          ticket_id: string
+          sender_id: string
+          is_admin_reply: boolean
+          body: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          ticket_id: string
+          sender_id: string
+          is_admin_reply?: boolean
+          body: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          ticket_id?: string
+          sender_id?: string
+          is_admin_reply?: boolean
+          body?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      kyc_documents: {
+        Row: {
+          id: string
+          user_id: string
+          doc_type: Database["public"]["Enums"]["kyc_doc_type"]
+          storage_path: string
+          status: Database["public"]["Enums"]["kyc_status"]
+          reviewed_by: string | null
+          reviewed_at: string | null
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          doc_type: Database["public"]["Enums"]["kyc_doc_type"]
+          storage_path: string
+          status?: Database["public"]["Enums"]["kyc_status"]
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          doc_type?: Database["public"]["Enums"]["kyc_doc_type"]
+          storage_path?: string
+          status?: Database["public"]["Enums"]["kyc_status"]
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          notes?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1770,6 +1938,71 @@ export type Database = {
       is_super_admin: { Args: never; Returns: boolean }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      fn_check_rate_limit: {
+        Args: { p_key: string; p_max_attempts: number; p_window_seconds: number }
+        Returns: boolean
+      }
+      fn_log_admin_action: {
+        Args: { p_action: string; p_target_type: string; p_target_id?: string | null; p_meta?: Json }
+        Returns: undefined
+      }
+      fn_get_admin_audit_log: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: number
+          admin_id: string
+          admin_name: string
+          action: string
+          target_type: string
+          target_id: string | null
+          meta: Json
+          created_at: string
+        }[]
+      }
+      fn_set_deposit_limits: {
+        Args: { p_daily: number | null; p_weekly: number | null; p_monthly: number | null }
+        Returns: undefined
+      }
+      fn_set_self_exclusion: { Args: { p_days: number }; Returns: undefined }
+      fn_check_deposit_allowed: {
+        Args: { p_user_id: string; p_amount: number }
+        Returns: { allowed: boolean; reason: string | null }[]
+      }
+      fn_open_support_ticket: { Args: { p_subject: string; p_body: string }; Returns: string }
+      fn_get_support_tickets: {
+        Args: { p_status?: Database["public"]["Enums"]["support_ticket_status"] | null; p_limit?: number }
+        Returns: {
+          id: string
+          user_id: string
+          full_name: string
+          subject: string
+          status: Database["public"]["Enums"]["support_ticket_status"]
+          created_at: string
+          updated_at: string
+          last_message: string | null
+        }[]
+      }
+      fn_get_kyc_queue: {
+        Args: { p_status?: Database["public"]["Enums"]["kyc_status"] | null; p_limit?: number }
+        Returns: {
+          id: string
+          user_id: string
+          full_name: string
+          doc_type: Database["public"]["Enums"]["kyc_doc_type"]
+          storage_path: string
+          status: Database["public"]["Enums"]["kyc_status"]
+          notes: string | null
+          created_at: string
+        }[]
+      }
+      fn_review_kyc_document: {
+        Args: {
+          p_document_id: string
+          p_status: Database["public"]["Enums"]["kyc_status"]
+          p_notes?: string | null
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       account_status: "active" | "suspended" | "banned"
@@ -1824,6 +2057,9 @@ export type Database = {
         | "odds_boost"
         | "cashback"
       selection_status: "pending" | "won" | "lost" | "void"
+      kyc_doc_type: "id_front" | "id_back" | "proof_of_address" | "selfie"
+      kyc_status: "pending" | "approved" | "rejected"
+      support_ticket_status: "open" | "pending" | "closed"
       user_role: "user" | "admin" | "super_admin"
       wallet_tx_status: "pending" | "completed" | "failed" | "reversed"
       wallet_tx_type:
@@ -2033,6 +2269,9 @@ export const Constants = {
         "cashback",
       ],
       selection_status: ["pending", "won", "lost", "void"],
+      kyc_doc_type: ["id_front", "id_back", "proof_of_address", "selfie"],
+      kyc_status: ["pending", "approved", "rejected"],
+      support_ticket_status: ["open", "pending", "closed"],
       user_role: ["user", "admin", "super_admin"],
       wallet_tx_status: ["pending", "completed", "failed", "reversed"],
       wallet_tx_type: [
