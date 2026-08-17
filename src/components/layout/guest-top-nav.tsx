@@ -24,7 +24,7 @@ export function GuestTopNav() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 lg:px-6">
+      <div className="relative mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 lg:px-6">
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
@@ -38,7 +38,7 @@ export function GuestTopNav() {
           <Logo />
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:ml-6 lg:flex">
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 lg:flex">
           {LINKS.map((link) => {
             const active = !link.external && (link.href === "/" ? pathname === "/" : pathname.startsWith(link.href));
             return (
