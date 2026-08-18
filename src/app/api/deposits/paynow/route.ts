@@ -27,6 +27,12 @@ export async function POST(req: NextRequest) {
   const { data: wallet } = await supabase.from("wallets").select("id").eq("user_id", user.id).single();
   if (!wallet) return NextResponse.json({ error: "Wallet not found" }, { status: 400 });
 
+  const { data: allowedRows } = await supabase.rpc("fn_check_deposit_allowed", { p_user_id: user.id, p_amount: amount });
+  const guard = allowedRows?.[0];
+  if (guard && !guard.allowed) {
+    return NextResponse.json({ error: guard.reason ?? "Deposit not allowed" }, { status: 403 });
+  }
+
   const { data: deposit, error: insertErr } = await supabase
     .from("deposits")
     .insert({
