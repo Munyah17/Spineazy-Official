@@ -12,6 +12,8 @@ import {
   HeartHandshake,
   LogOut,
   Crown,
+  FileCheck,
+  LifeBuoy,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +27,8 @@ const MENU = [
   { href: "/account/security", label: "Account Security", icon: Lock },
   { href: "/wallet", label: "Transaction History", icon: Receipt },
   { href: "/promotions", label: "Bonuses", icon: Gift },
+  { href: "/account/kyc", label: "Verify Identity", icon: FileCheck },
+  { href: "/support", label: "Support", icon: LifeBuoy },
   { href: "/account/responsible-gaming", label: "Responsible Gaming", icon: HeartHandshake },
 ];
 

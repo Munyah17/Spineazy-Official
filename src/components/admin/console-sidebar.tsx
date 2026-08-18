@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, Users, ShieldAlert, ChartColumnBig, ArrowLeftRight, LogOut } from "lucide-react";
+import { LayoutGrid, Users, ShieldAlert, ChartColumnBig, ArrowLeftRight, LogOut, FileCheck, LifeBuoy, History } from "lucide-react";
 import { useSession } from "@/lib/auth/session-provider";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,9 @@ const NAV_SECTIONS = [
       { href: "/admin/users", label: "Users", icon: Users, exact: false },
       { href: "/admin/withdrawals", label: "Withdrawals", icon: ArrowLeftRight, exact: false },
       { href: "/admin/fund-violations", label: "Fund Protection", icon: ShieldAlert, exact: false },
+      { href: "/admin/kyc", label: "KYC Review", icon: FileCheck, exact: false },
+      { href: "/admin/support", label: "Support Tickets", icon: LifeBuoy, exact: false },
+      { href: "/admin/audit-log", label: "Audit Log", icon: History, exact: false },
     ],
   },
 ];
