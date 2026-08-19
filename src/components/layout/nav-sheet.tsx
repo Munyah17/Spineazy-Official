@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import {
   Menu,
+  Plus,
   User,
   Wallet,
   Receipt,
@@ -27,11 +28,12 @@ import { Separator } from "@/components/ui/separator";
 import { Logo } from "@/components/layout/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSession } from "@/lib/auth/session-provider";
+import { formatMoney } from "@/lib/format";
 import { SPORTSBOOK_URL } from "@/lib/constants";
 
 export function NavSheet() {
   const [open, setOpen] = useState(false);
-  const { profile, signOut } = useSession();
+  const { profile, wallet, signOut } = useSession();
   const isAdmin = profile?.role === "admin" || profile?.role === "super_admin";
 
   const links = [
@@ -68,6 +70,18 @@ export function NavSheet() {
           </SheetTitle>
           <ThemeToggle />
         </SheetHeader>
+        {profile && (
+          <Link
+            href="/wallet"
+            onClick={() => setOpen(false)}
+            className="mx-3 mt-3 flex items-center justify-between rounded-lg bg-secondary px-3.5 py-2.5 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-accent"
+          >
+            <span>{formatMoney(wallet?.balance ?? 0)}</span>
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+              <Plus className="size-3.5" />
+            </span>
+          </Link>
+        )}
         <nav className="flex flex-col gap-1 p-3">
           {links.map((l) => (
             <Link

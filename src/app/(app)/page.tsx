@@ -25,7 +25,20 @@ export default async function LobbyPage() {
     <div className="flex flex-col gap-6 px-3 py-4 lg:px-6 lg:py-6">
       <HeroBanner banners={banners} />
 
-      <div className="flex flex-wrap items-center justify-center gap-3">
+      <div className="grid grid-cols-4 gap-2 sm:hidden">
+        {CATEGORIES.map((cat) => (
+          <Link
+            key={cat.label}
+            href={cat.href}
+            className="flex flex-col items-center justify-center gap-1 rounded-xl bg-secondary px-1 py-2.5 text-center text-secondary-foreground transition-colors hover:bg-accent"
+          >
+            <cat.icon className="size-4.5 text-primary" />
+            <span className="text-[11px] leading-tight font-semibold">{cat.label}</span>
+          </Link>
+        ))}
+      </div>
+
+      <div className="hidden flex-wrap items-center justify-center gap-3 sm:flex">
         {CATEGORIES.map((cat) => (
           <Link
             key={cat.label}
