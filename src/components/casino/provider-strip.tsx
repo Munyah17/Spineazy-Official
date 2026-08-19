@@ -3,7 +3,7 @@ import { ALL_PROVIDERS } from "@/lib/data/providers";
 
 export function ProviderStrip() {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
       {ALL_PROVIDERS.map((provider) => (
         <Link
           key={provider}
