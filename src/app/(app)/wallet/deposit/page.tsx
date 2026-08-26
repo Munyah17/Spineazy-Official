@@ -50,6 +50,8 @@ export default function DepositPage() {
           toast.success("Deposit received!");
           router.push("/wallet");
           router.refresh();
+        } else if (res.status === 202 && data.status === "pending") {
+          router.push(`/wallet/deposit/result?depositId=${data.depositId}&provider=ecocash`);
         } else {
           toast.error("Deposit failed", { description: data.message ?? data.error });
         }
@@ -158,7 +160,11 @@ export default function DepositPage() {
         <Button type="submit" disabled={loading} className="w-full glow-primary">
           {loading ? "Processing…" : "Deposit Now"}
         </Button>
-        <p className="text-center text-xs text-muted-foreground">Your deposit will be credited instantly.</p>
+        <p className="text-center text-xs text-muted-foreground">
+          {method === "ecocash"
+            ? "Your deposit will be credited instantly."
+            : "You'll be taken to Paynow to complete payment securely, then we'll confirm and credit your wallet automatically."}
+        </p>
       </form>
     </div>
   );

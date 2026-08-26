@@ -109,7 +109,18 @@ export async function POST(req: NextRequest) {
       { status: 402 }
     );
   } catch (e) {
-    await admin.from("deposits").update({ status: "failed" }).eq("id", deposit.id);
-    return NextResponse.json({ error: (e as Error).message }, { status: 502 });
+    // A thrown/timed-out request to EcoCash is NOT the same as EcoCash
+    // declining the charge -- the USSD prompt on the user's phone may still
+    // be awaiting their PIN, or may have already succeeded, when our HTTP
+    // call to EcoCash's API times out on our end. Marking this "failed" here
+    // would be a lie: the deposit stays "processing" and the notifyUrl
+    // webhook (or a manual admin reconciliation) resolves it once EcoCash's
+    // real outcome is known. Never tell the user "failed" when we simply
+    // don't know yet.
+    console.error("ecocash charge request failed (deposit left processing):", (e as Error).message);
+    return NextResponse.json(
+      { status: "pending", depositId: deposit.id, message: "Still confirming with EcoCash." },
+      { status: 202 }
+    );
   }
 }
