@@ -81,9 +81,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ balance: wallet.balance, currency: payload.currency ?? "USD" });
   }
 
+  // Validate the amount up front, before it ever reaches an idempotency
+  // reservation or an RPC call -- a malformed/non-finite amount (e.g. a
+  // non-numeric string coerces to NaN, which passes every "> balance"
+  // comparison as false) must be rejected outright, not silently treated
+  // as a no-op debit/credit.
+  if (payload.action === "debit" || payload.action === "credit") {
+    const amount = Number(payload.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+    }
+    if (payload.action === "debit" && amount > wallet.balance) {
+      return NextResponse.json({ error: "Insufficient balance", balance: wallet.balance }, { status: 402 });
+    }
+  }
+
   // Idempotency: reserve (provider, transaction_id, action) before touching
   // the wallet. A unique-constraint conflict means we've already processed
-  // this exact callback -- return success without reprocessing.
+  // this exact callback -- return success without reprocessing. If the
+  // wallet mutation below fails after this reservation, the row is deleted
+  // so a genuine retry isn't permanently swallowed as a false "duplicate".
   const { error: dedupeError } = await admin
     .from("webhook_events")
     .insert({ provider: "softgamings", transaction_id: payload.transactionId, action: payload.action });
@@ -95,13 +112,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Could not record callback" }, { status: 500 });
   }
 
+  async function releaseReservation() {
+    await admin
+      .from("webhook_events")
+      .delete()
+      .match({ provider: "softgamings", transaction_id: payload.transactionId, action: payload.action });
+  }
+
   switch (payload.action) {
     case "debit": {
-      const amount = Number(payload.amount ?? 0);
-      if (amount > wallet.balance) {
-        return NextResponse.json({ error: "Insufficient balance", balance: wallet.balance }, { status: 402 });
-      }
-      await admin.rpc("fn_wallet_debit", {
+      const amount = Number(payload.amount);
+      const { error: rpcError } = await admin.rpc("fn_wallet_debit", {
         p_user_id: payload.playerId,
         p_amount: amount,
         p_type: "bet_stake",
@@ -109,11 +130,16 @@ export async function POST(req: NextRequest) {
         p_reference_type: "casino_aggregator_bet",
         p_description: `Casino bet — ${payload.gameId ?? "unknown game"}`,
       });
-      return NextResponse.json({ status: "ok", balance: wallet.balance - amount });
+      if (rpcError) {
+        await releaseReservation();
+        return NextResponse.json({ error: rpcError.message }, { status: 500 });
+      }
+      const { data: freshWallet } = await admin.from("wallets").select("balance").eq("id", wallet.id).single();
+      return NextResponse.json({ status: "ok", balance: freshWallet?.balance ?? wallet.balance - amount });
     }
     case "credit": {
-      const amount = Number(payload.amount ?? 0);
-      await admin.rpc("fn_wallet_credit", {
+      const amount = Number(payload.amount);
+      const { error: rpcError } = await admin.rpc("fn_wallet_credit", {
         p_user_id: payload.playerId,
         p_amount: amount,
         p_type: "bet_payout",
@@ -121,14 +147,24 @@ export async function POST(req: NextRequest) {
         p_reference_type: "casino_aggregator_win",
         p_description: `Casino win — ${payload.gameId ?? "unknown game"}`,
       });
-      return NextResponse.json({ status: "ok", balance: wallet.balance + amount });
+      if (rpcError) {
+        await releaseReservation();
+        return NextResponse.json({ error: rpcError.message }, { status: 500 });
+      }
+      const { data: freshWallet } = await admin.from("wallets").select("balance").eq("id", wallet.id).single();
+      return NextResponse.json({ status: "ok", balance: freshWallet?.balance ?? wallet.balance + amount });
     }
     case "rollback": {
       // TODO(softgamings-integration): reverse the referenced transaction id
       // via wallet_transactions lookup once the rollback contract is known.
-      return NextResponse.json({ status: "ok" });
+      // Deliberately NOT reporting fake success for an unimplemented
+      // reversal -- an aggregator-initiated void must not be silently
+      // dropped once real traffic depends on it.
+      await releaseReservation();
+      return NextResponse.json({ error: "Rollback not yet implemented" }, { status: 501 });
     }
     default:
+      await releaseReservation();
       return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   }
 }
